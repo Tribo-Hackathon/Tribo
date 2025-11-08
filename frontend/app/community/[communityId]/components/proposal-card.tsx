@@ -20,7 +20,12 @@ interface ProposalCardProps {
   onVoteSuccess?: () => void;
 }
 
-export function ProposalCard({ proposal, communityId, governorAddress, onVoteSuccess }: ProposalCardProps) {
+export function ProposalCard({
+  proposal,
+  communityId,
+  governorAddress,
+  onVoteSuccess,
+}: ProposalCardProps) {
   const [isVoting, setIsVoting] = useState(false);
   const [userHasVoted, setUserHasVoted] = useState<boolean | null>(null);
   const [votingFor, setVotingFor] = useState<VoteSupport | null>(null);
@@ -39,7 +44,7 @@ export function ProposalCard({ proposal, communityId, governorAddress, onVoteSuc
       );
       setUserHasVoted(hasVoted);
     } catch (error) {
-      console.error('Failed to check user vote:', error);
+      console.error("Failed to check user vote:", error);
     }
   };
 
@@ -51,16 +56,12 @@ export function ProposalCard({ proposal, communityId, governorAddress, onVoteSuc
     setVotingFor(support);
 
     try {
-      await castVote(
-        governorAddress,
-        proposal.id,
-        support
-      );
+      await castVote(governorAddress, proposal.id, support);
 
       setUserHasVoted(true);
       onVoteSuccess?.();
     } catch (error) {
-      console.error('Failed to cast vote:', error);
+      console.error("Failed to cast vote:", error);
     } finally {
       setIsVoting(false);
       setVotingFor(null);
@@ -68,10 +69,22 @@ export function ProposalCard({ proposal, communityId, governorAddress, onVoteSuc
   };
 
   // Calculate vote percentages
-  const totalVotes = proposal.votes.forVotes + proposal.votes.againstVotes + proposal.votes.abstainVotes;
-  const forPercentage = totalVotes > 0n ? Number((proposal.votes.forVotes * 100n) / totalVotes) : 0;
-  const againstPercentage = totalVotes > 0n ? Number((proposal.votes.againstVotes * 100n) / totalVotes) : 0;
-  const abstainPercentage = totalVotes > 0n ? Number((proposal.votes.abstainVotes * 100n) / totalVotes) : 0;
+  const totalVotes =
+    proposal.votes.forVotes +
+    proposal.votes.againstVotes +
+    proposal.votes.abstainVotes;
+  const forPercentage =
+    totalVotes > BigInt(0)
+      ? Number((proposal.votes.forVotes * BigInt(100)) / totalVotes)
+      : 0;
+  const againstPercentage =
+    totalVotes > BigInt(0)
+      ? Number((proposal.votes.againstVotes * BigInt(100)) / totalVotes)
+      : 0;
+  const abstainPercentage =
+    totalVotes > BigInt(0)
+      ? Number((proposal.votes.abstainVotes * BigInt(100)) / totalVotes)
+      : 0;
 
   // Get state styling
   const getStateStyle = (state: ProposalState) => {
@@ -142,7 +155,11 @@ export function ProposalCard({ proposal, communityId, governorAddress, onVoteSuc
         </div>
 
         <div className="flex-shrink-0 ml-4">
-          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStateStyle(proposal.state)}`}>
+          <span
+            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStateStyle(
+              proposal.state
+            )}`}
+          >
             {getProposalStateLabel(proposal.state)}
           </span>
         </div>
@@ -151,18 +168,22 @@ export function ProposalCard({ proposal, communityId, governorAddress, onVoteSuc
       {/* Proposal Info */}
       <div className="flex items-center text-sm text-gray-500 mb-4 space-x-4">
         <div>
-          <span className="font-medium">Proposal #{proposal.id.toString()}</span>
+          <span className="font-medium">
+            Proposal #{proposal.id.toString()}
+          </span>
         </div>
         <div>
-          <span>By {proposal.proposer.slice(0, 6)}...{proposal.proposer.slice(-4)}</span>
+          <span>
+            By {proposal.proposer.slice(0, 6)}...{proposal.proposer.slice(-4)}
+          </span>
         </div>
         <div>
-          <span className="capitalize">{proposal.type.replace('_', ' ')}</span>
+          <span className="capitalize">{proposal.type.replace("_", " ")}</span>
         </div>
       </div>
 
       {/* Vote Progress */}
-      {totalVotes > 0n && (
+      {totalVotes > BigInt(0) && (
         <div className="mb-4">
           <div className="flex justify-between text-sm text-gray-600 mb-2">
             <span>Voting Progress</span>
@@ -207,8 +228,18 @@ export function ProposalCard({ proposal, communityId, governorAddress, onVoteSuc
       {isActive && (
         <div className="mb-4">
           <div className="flex items-center text-sm text-gray-600">
-            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <svg
+              className="w-4 h-4 mr-1"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
             <span>{getTimeRemaining()}</span>
           </div>
@@ -251,7 +282,7 @@ export function ProposalCard({ proposal, communityId, governorAddress, onVoteSuc
                     Voting...
                   </div>
                 ) : (
-                  '👍 For'
+                  "👍 For"
                 )}
               </Button>
 
@@ -267,7 +298,7 @@ export function ProposalCard({ proposal, communityId, governorAddress, onVoteSuc
                     Voting...
                   </div>
                 ) : (
-                  '👎 Against'
+                  "👎 Against"
                 )}
               </Button>
 
@@ -284,7 +315,7 @@ export function ProposalCard({ proposal, communityId, governorAddress, onVoteSuc
                     Voting...
                   </div>
                 ) : (
-                  '🤷 Abstain'
+                  "🤷 Abstain"
                 )}
               </Button>
             </div>
