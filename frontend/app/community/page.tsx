@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { getAllCommunities, Community } from "@/lib/contracts/registry";
 // Utility function to format date
@@ -22,21 +22,44 @@ export default function CommunityDiscoveryPage() {
   const [communities, setCommunities] = useState<Community[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const loadingRef = useRef(false); // Prevent multiple simultaneous calls
 
-  useEffect(() => {
-    async function loadCommunities() {
-      try {
-        setLoading(true);
-        const allCommunities = await getAllCommunities();
-        setCommunities(allCommunities);
-      } catch (err) {
-        console.error("Failed to load communities:", err);
-        setError("Failed to load communities. Please try again.");
-      } finally {
-        setLoading(false);
-      }
+  const loadCommunities = async () => {
+    // Prevent multiple simultaneous calls
+    if (loadingRef.current) {
+      return;
     }
 
+    try {
+      loadingRef.current = true;
+      setLoading(true);
+      setError(null);
+
+      const allCommunities = await getAllCommunities();
+      setCommunities(allCommunities);
+    } catch (err: unknown) {
+      console.error("Failed to load communities:", err);
+
+      // Provide more helpful error messages
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      if (
+        errorMessage.includes("429") ||
+        errorMessage.includes("rate limit") ||
+        errorMessage.includes("over rate limit")
+      ) {
+        setError(
+          "RPC endpoint is rate-limited. Please wait a moment and try again."
+        );
+      } else {
+        setError("Failed to load communities. Please try again.");
+      }
+    } finally {
+      setLoading(false);
+      loadingRef.current = false;
+    }
+  };
+
+  useEffect(() => {
     loadCommunities();
   }, []);
 
@@ -61,7 +84,7 @@ export default function CommunityDiscoveryPage() {
             </h2>
             <p className="text-red-600">{error}</p>
             <button
-              onClick={() => window.location.reload()}
+              onClick={loadCommunities}
               className="mt-4 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition-colors"
             >
               Try Again

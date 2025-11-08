@@ -37,7 +37,8 @@ export const FACTORY_ABI = [
           { name: "proposalThreshold", type: "uint256", internalType: "uint256" },
           { name: "quorumNumerator", type: "uint256", internalType: "uint256" },
           { name: "deployTimelock", type: "bool", internalType: "bool" },
-          { name: "metadataURI", type: "string", internalType: "string" }
+          { name: "metadataURI", type: "string", internalType: "string" },
+          { name: "priceFeedAddress", type: "address", internalType: "address" }
         ]
       }
     ],

@@ -36,9 +36,35 @@ export function GovernanceInterface({
 
       const allProposals = await getAllProposals(community.governor);
       setProposals(allProposals);
-    } catch (err) {
+
+      // If no proposals were loaded, it might be due to RPC issues
+      // But we don't show an error unless there's an actual exception
+      if (allProposals.length === 0) {
+        // This is fine - might just be no proposals yet or RPC temporarily unavailable
+        // The UI will show "No Proposals Yet" message
+      }
+    } catch (err: unknown) {
       console.error("Failed to load proposals:", err);
-      setError("Failed to load proposals");
+
+      // Provide more helpful error messages
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      const errorCode = (err as { code?: number })?.code;
+
+      if (
+        errorMessage.includes("503") ||
+        errorMessage.includes("no backend") ||
+        errorCode === -32011
+      ) {
+        setError(
+          "RPC endpoint temporarily unavailable. Please try again in a few moments."
+        );
+      } else if (errorMessage.includes("timeout")) {
+        setError(
+          "Request timed out. The network may be slow. Please try again."
+        );
+      } else {
+        setError("Failed to load proposals. Please try again.");
+      }
     } finally {
       setLoading(false);
     }

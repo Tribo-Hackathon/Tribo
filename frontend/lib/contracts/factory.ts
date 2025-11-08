@@ -1,7 +1,7 @@
 // Note: We're using direct viem clients instead of wagmi for custom RPC support
 import { createWalletClient, createPublicClient, custom, http, decodeEventLog } from 'viem';
-import { CONTRACT_ADDRESSES, ENVIRONMENT, ANVIL_CHAIN } from './config';
-import { COMMUNITY_DEFAULTS, CommunityParams } from './constants';
+import { BASE_CHAIN, CONTRACT_ADDRESSES, ENVIRONMENT } from './config';
+import { COMMUNITY_DEFAULTS, CommunityParams, CHAINLINK_FEEDS } from './constants';
 import { FACTORY_ABI, DeploymentResult } from './types';
 
 /**
@@ -18,17 +18,25 @@ export async function createCommunity(
       throw new Error('MetaMask not found. Please install MetaMask.');
     }
 
-    // Create wallet client with MetaMask and custom Anvil chain
+    // Create wallet client with MetaMask and Base chain
     const walletClient = createWalletClient({
-      chain: ANVIL_CHAIN,
+      chain: BASE_CHAIN,
       transport: custom(window.ethereum),
     });
 
-    // Create public client for transaction receipt with custom Anvil chain
+    // Create public client for transaction receipt with Base chain
     const publicClient = createPublicClient({
-      chain: ANVIL_CHAIN,
+      chain: BASE_CHAIN,
       transport: http(ENVIRONMENT.RPC_URL),
     });
+
+    // Get the Chainlink price feed address for the current chain
+    const chainId = BASE_CHAIN.id as keyof typeof CHAINLINK_FEEDS;
+    const priceFeedAddress = CHAINLINK_FEEDS[chainId];
+
+    if (!priceFeedAddress) {
+      throw new Error(`Chainlink price feed not available for chain ID ${chainId}`);
+    }
 
     // Prepare community parameters using constants and creator address
     const communityParams: CommunityParams = {
@@ -43,6 +51,7 @@ export async function createCommunity(
       quorumNumerator: COMMUNITY_DEFAULTS.QUORUM_NUMERATOR,
       deployTimelock: COMMUNITY_DEFAULTS.DEPLOY_TIMELOCK,
       metadataURI: COMMUNITY_DEFAULTS.METADATA_URI,
+      priceFeedAddress: priceFeedAddress, // NEW - Chainlink price feed address
     };
 
     // Execute the contract write transaction using wallet client
@@ -122,6 +131,14 @@ export async function createCommunity(
 export function prepareCommunityParams(
   creatorAddress: `0x${string}`
 ): CommunityParams {
+  // Get the Chainlink price feed address for the current chain
+  const chainId = BASE_CHAIN.id as keyof typeof CHAINLINK_FEEDS;
+  const priceFeedAddress = CHAINLINK_FEEDS[chainId];
+
+  if (!priceFeedAddress) {
+    throw new Error(`Chainlink price feed not available for chain ID ${chainId}`);
+  }
+
   return {
     name: COMMUNITY_DEFAULTS.NAME,
     symbol: COMMUNITY_DEFAULTS.SYMBOL,
@@ -134,5 +151,6 @@ export function prepareCommunityParams(
     quorumNumerator: COMMUNITY_DEFAULTS.QUORUM_NUMERATOR,
     deployTimelock: COMMUNITY_DEFAULTS.DEPLOY_TIMELOCK,
     metadataURI: COMMUNITY_DEFAULTS.METADATA_URI,
+    priceFeedAddress: priceFeedAddress, // NEW - Chainlink price feed address
   };
 }

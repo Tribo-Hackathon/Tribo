@@ -1,5 +1,25 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Configuration
+
+This project is configured to use the Base network with deployed smart contracts.
+
+### Environment Variables
+
+Create a `.env.local` file in the frontend directory with the following variables:
+
+```bash
+# WalletConnect Project ID (required for RainbowKit)
+NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=YOUR_PROJECT_ID
+```
+
+### Contract Addresses (Base Network)
+
+- **Factory**: `0x897FFD5c0E830dC6F5C29aD648e6Ae00e8d6e900`
+- **Registry**: `0x5c9ECC849e954aFDc7Ff2Ca22D09b9033060D9d9`
+- **RPC**: Uses Base's public RPC endpoints automatically
+- **Chain ID**: 8453 (Base Mainnet)
+
 ## Getting Started
 
 First, run the development server:
