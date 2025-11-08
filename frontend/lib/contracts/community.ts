@@ -1,7 +1,7 @@
 import { createWalletClient, custom } from 'viem';
 import { BASE_CHAIN } from './config';
 import { getCommunity, Community } from './registry';
-import { createResilientPublicClient, cachedContractRead, batchContractReads } from './rpc-client';
+import { createResilientPublicClient, cachedContractRead } from './rpc-client';
 
 // AccessNFT ABI - key functions for checking balance and minting
 const ACCESS_NFT_ABI = [
@@ -74,39 +74,45 @@ export async function getCommunityData(communityId: bigint): Promise<CommunityDa
     // Create cache keys for each contract call
     const cacheKeyBase = `nft_${nftAddress}`;
 
-    // Batch contract reads with caching and retry logic
-    const [nftName, nftSymbol, mintPrice] = await batchContractReads([
-      {
-        key: `${cacheKeyBase}_name`,
-        call: () => publicClient.readContract({
-          address: nftAddress,
-          abi: ACCESS_NFT_ABI,
-          functionName: 'name',
-        })
-      },
-      {
-        key: `${cacheKeyBase}_symbol`,
-        call: () => publicClient.readContract({
-          address: nftAddress,
-          abi: ACCESS_NFT_ABI,
-          functionName: 'symbol',
-        })
-      },
-      {
-        key: `${cacheKeyBase}_mintPrice`,
-        call: () => publicClient.readContract({
-          address: nftAddress,
-          abi: ACCESS_NFT_ABI,
-          functionName: 'getMintPrice',
-        })
-      }
-    ], 200); // 200ms delay between calls
+    // Get contract data with individual cached calls to handle different return types
+    const nftName = await cachedContractRead(
+      `${cacheKeyBase}_name`,
+      () => publicClient.readContract({
+        address: nftAddress,
+        abi: ACCESS_NFT_ABI,
+        functionName: 'name',
+      })
+    ) as string;
+
+    // Add small delay between calls
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    const nftSymbol = await cachedContractRead(
+      `${cacheKeyBase}_symbol`,
+      () => publicClient.readContract({
+        address: nftAddress,
+        abi: ACCESS_NFT_ABI,
+        functionName: 'symbol',
+      })
+    ) as string;
+
+    // Add small delay between calls
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    const mintPrice = await cachedContractRead(
+      `${cacheKeyBase}_mintPrice`,
+      () => publicClient.readContract({
+        address: nftAddress,
+        abi: ACCESS_NFT_ABI,
+        functionName: 'getMintPrice',
+      })
+    ) as bigint;
 
     return {
       ...community,
-      nftName: nftName as string,
-      nftSymbol: nftSymbol as string,
-      mintPrice: mintPrice as bigint,
+      nftName,
+      nftSymbol,
+      mintPrice,
     };
   } catch (error) {
     console.error('Failed to fetch community data:', error);

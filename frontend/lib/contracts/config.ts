@@ -2,6 +2,8 @@
 export const CONTRACT_ADDRESSES = {
   FACTORY: "0x897FFD5c0E830dC6F5C29aD648e6Ae00e8d6e900" as const,
   REGISTRY: "0x5c9ECC849e954aFDc7Ff2Ca22D09b9033060D9d9" as const,
+  // Placeholder NFT address for testing (this will be dynamic per community in production)
+  NFT: "0x0000000000000000000000000000000000000000" as const,
 } as const;
 
 // Base mainnet chain configuration with multiple RPC endpoints for redundancy

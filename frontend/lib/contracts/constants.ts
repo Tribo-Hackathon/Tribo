@@ -5,11 +5,11 @@ export const COMMUNITY_DEFAULTS = {
   BASE_URI: "ipfs://base-demo/" as const,
 
   // Default governance parameters based on the cast command
-  MAX_SUPPLY: 0n, // uint256 - 0 means unlimited
+  MAX_SUPPLY: BigInt(0), // uint256 - 0 means unlimited
   VOTING_DELAY: 1, // uint48 - 1 block
   VOTING_PERIOD: 7200, // uint32 - ~1 day in blocks (assuming 12s blocks)
-  PROPOSAL_THRESHOLD: 1n, // uint256
-  QUORUM_NUMERATOR: 5n, // uint256 - 5%
+  PROPOSAL_THRESHOLD: BigInt(1), // uint256
+  QUORUM_NUMERATOR: BigInt(5), // uint256 - 5%
   DEPLOY_TIMELOCK: false, // bool - whether to deploy timelock
   METADATA_URI: "", // string - empty metadata URI
 } as const;

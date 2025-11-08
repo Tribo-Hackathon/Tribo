@@ -32,7 +32,9 @@ export default function ProposalPage({ params }: ProposalPageProps) {
   const { address, isConnected } = useAccount();
 
   const [community, setCommunity] = useState<CommunityData | null>(null);
-  const [userStatus, setUserStatus] = useState<UserCommunityStatus | null>(null);
+  const [userStatus, setUserStatus] = useState<UserCommunityStatus | null>(
+    null
+  );
   const [proposal, setProposal] = useState<Proposal | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -57,12 +59,18 @@ export default function ProposalPage({ params }: ProposalPageProps) {
 
         // Load user status if connected
         if (address && isConnected) {
-          const status = await getUserCommunityStatus(BigInt(communityId), address);
+          const status = await getUserCommunityStatus(
+            BigInt(communityId),
+            address
+          );
           setUserStatus(status);
         }
 
         // Load proposal data
-        const proposalData = await getProposal(communityData.governor, BigInt(proposalId));
+        const proposalData = await getProposal(
+          communityData.governor,
+          BigInt(proposalId)
+        );
         if (!proposalData) {
           setError("Proposal not found");
           return;
@@ -72,7 +80,11 @@ export default function ProposalPage({ params }: ProposalPageProps) {
         // Check if user has voted
         if (address && isConnected) {
           try {
-            const hasVoted = await hasUserVoted(communityData.governor, BigInt(proposalId), address);
+            const hasVoted = await hasUserVoted(
+              communityData.governor,
+              BigInt(proposalId),
+              address
+            );
             setUserHasVoted(hasVoted);
           } catch (err) {
             console.error("Failed to check user vote:", err);
@@ -101,7 +113,10 @@ export default function ProposalPage({ params }: ProposalPageProps) {
       setUserHasVoted(true);
 
       // Reload proposal to get updated vote counts
-      const updatedProposal = await getProposal(community.governor, BigInt(proposalId));
+      const updatedProposal = await getProposal(
+        community.governor,
+        BigInt(proposalId)
+      );
       if (updatedProposal) {
         setProposal(updatedProposal);
       }
@@ -139,8 +154,18 @@ export default function ProposalPage({ params }: ProposalPageProps) {
             href={`/community/${communityId}`}
             className="inline-flex items-center px-6 py-3 text-sm font-medium text-white bg-purple-600 border border-transparent rounded-lg hover:bg-purple-700 transition-colors duration-200 shadow-sm"
           >
-            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            <svg
+              className="w-4 h-4 mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 19l-7-7 7-7"
+              />
             </svg>
             Back to Community
           </Link>
@@ -150,10 +175,22 @@ export default function ProposalPage({ params }: ProposalPageProps) {
   }
 
   // Calculate vote percentages
-  const totalVotes = proposal.votes.forVotes + proposal.votes.againstVotes + proposal.votes.abstainVotes;
-  const forPercentage = totalVotes > 0n ? Number((proposal.votes.forVotes * 100n) / totalVotes) : 0;
-  const againstPercentage = totalVotes > 0n ? Number((proposal.votes.againstVotes * 100n) / totalVotes) : 0;
-  const abstainPercentage = totalVotes > 0n ? Number((proposal.votes.abstainVotes * 100n) / totalVotes) : 0;
+  const totalVotes =
+    proposal.votes.forVotes +
+    proposal.votes.againstVotes +
+    proposal.votes.abstainVotes;
+  const forPercentage =
+    totalVotes > BigInt(0)
+      ? Number((proposal.votes.forVotes * BigInt(100)) / totalVotes)
+      : 0;
+  const againstPercentage =
+    totalVotes > BigInt(0)
+      ? Number((proposal.votes.againstVotes * BigInt(100)) / totalVotes)
+      : 0;
+  const abstainPercentage =
+    totalVotes > BigInt(0)
+      ? Number((proposal.votes.abstainVotes * BigInt(100)) / totalVotes)
+      : 0;
 
   const isActive = proposal.state === ProposalState.ACTIVE;
   const canVote = isConnected && isActive && userHasVoted === false;
@@ -183,8 +220,18 @@ export default function ProposalPage({ params }: ProposalPageProps) {
             href={`/community/${communityId}`}
             className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-900 transition-colors duration-200 shadow-sm"
           >
-            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            <svg
+              className="w-4 h-4 mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 19l-7-7 7-7"
+              />
             </svg>
             Back to {community.name}
           </Link>
@@ -200,13 +247,24 @@ export default function ProposalPage({ params }: ProposalPageProps) {
                 </h1>
                 <p className="text-gray-600 mb-4">{proposal.summary}</p>
                 <div className="flex items-center space-x-4 text-sm text-gray-500">
-                  <span className="font-medium">Proposal #{proposal.id.toString()}</span>
-                  <span>By {proposal.proposer.slice(0, 6)}...{proposal.proposer.slice(-4)}</span>
-                  <span className="capitalize">{proposal.type.replace('_', ' ')}</span>
+                  <span className="font-medium">
+                    Proposal #{proposal.id.toString()}
+                  </span>
+                  <span>
+                    By {proposal.proposer.slice(0, 6)}...
+                    {proposal.proposer.slice(-4)}
+                  </span>
+                  <span className="capitalize">
+                    {proposal.type.replace("_", " ")}
+                  </span>
                 </div>
               </div>
               <div className="flex-shrink-0 ml-4">
-                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getStateStyle(proposal.state)}`}>
+                <span
+                  className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getStateStyle(
+                    proposal.state
+                  )}`}
+                >
                   {getProposalStateLabel(proposal.state)}
                 </span>
               </div>
@@ -214,16 +272,19 @@ export default function ProposalPage({ params }: ProposalPageProps) {
           </div>
 
           {/* Voting Section */}
-          {totalVotes > 0n && (
+          {totalVotes > BigInt(0) && (
             <div className="px-6 py-4 border-b border-gray-200">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Voting Results</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                Voting Results
+              </h3>
               <div className="space-y-3">
                 {/* For Votes */}
                 <div>
                   <div className="flex justify-between text-sm mb-1">
                     <span className="text-green-600 font-medium">For</span>
                     <span className="text-gray-600">
-                      {proposal.votes.forVotes.toString()} votes ({forPercentage.toFixed(1)}%)
+                      {proposal.votes.forVotes.toString()} votes (
+                      {forPercentage.toFixed(1)}%)
                     </span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
@@ -239,7 +300,8 @@ export default function ProposalPage({ params }: ProposalPageProps) {
                   <div className="flex justify-between text-sm mb-1">
                     <span className="text-red-600 font-medium">Against</span>
                     <span className="text-gray-600">
-                      {proposal.votes.againstVotes.toString()} votes ({againstPercentage.toFixed(1)}%)
+                      {proposal.votes.againstVotes.toString()} votes (
+                      {againstPercentage.toFixed(1)}%)
                     </span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
@@ -255,7 +317,8 @@ export default function ProposalPage({ params }: ProposalPageProps) {
                   <div className="flex justify-between text-sm mb-1">
                     <span className="text-gray-600 font-medium">Abstain</span>
                     <span className="text-gray-600">
-                      {proposal.votes.abstainVotes.toString()} votes ({abstainPercentage.toFixed(1)}%)
+                      {proposal.votes.abstainVotes.toString()} votes (
+                      {abstainPercentage.toFixed(1)}%)
                     </span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
@@ -272,7 +335,9 @@ export default function ProposalPage({ params }: ProposalPageProps) {
           {/* Voting Actions */}
           {canVote && (
             <div className="px-6 py-4 border-b border-gray-200">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Cast Your Vote</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                Cast Your Vote
+              </h3>
               <div className="flex space-x-3">
                 <Button
                   onClick={() => handleVote(VoteSupport.FOR)}
@@ -324,8 +389,16 @@ export default function ProposalPage({ params }: ProposalPageProps) {
           {userHasVoted === true && (
             <div className="px-6 py-4 border-b border-gray-200">
               <div className="flex items-center text-sm text-green-600">
-                <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                <svg
+                  className="w-4 h-4 mr-2"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                    clipRule="evenodd"
+                  />
                 </svg>
                 You have already voted on this proposal
               </div>
@@ -344,7 +417,9 @@ export default function ProposalPage({ params }: ProposalPageProps) {
         {/* Proposal Description */}
         <div className="bg-white shadow rounded-lg">
           <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-medium text-gray-900">Proposal Details</h2>
+            <h2 className="text-lg font-medium text-gray-900">
+              Proposal Details
+            </h2>
           </div>
           <div className="px-6 py-6">
             <div className="prose prose-gray max-w-none">
@@ -354,50 +429,77 @@ export default function ProposalPage({ params }: ProposalPageProps) {
                   let displayDescription = proposal.description;
                   try {
                     const parsed = JSON.parse(proposal.description);
-                    displayDescription = parsed.description || parsed.title || proposal.description;
+                    displayDescription =
+                      parsed.description ||
+                      parsed.title ||
+                      proposal.description;
                   } catch {
                     // If it's not JSON, use as-is
                     displayDescription = proposal.description;
                   }
 
                   // Format the description with proper line breaks and styling
-                  return displayDescription.split('\n').map((paragraph, index) => {
-                    if (paragraph.trim() === '') {
-                      return <br key={index} />;
-                    }
-
-                    // Check if it's a header (starts with #)
-                    if (paragraph.trim().startsWith('#')) {
-                      const headerLevel = paragraph.match(/^#+/)?.[0].length || 1;
-                      const headerText = paragraph.replace(/^#+\s*/, '');
-
-                      if (headerLevel === 1) {
-                        return <h1 key={index} className="text-2xl font-bold text-gray-900 mt-6 mb-4 first:mt-0">{headerText}</h1>;
-                      } else if (headerLevel === 2) {
-                        return <h2 key={index} className="text-xl font-semibold text-gray-900 mt-5 mb-3 first:mt-0">{headerText}</h2>;
-                      } else {
-                        return <h3 key={index} className="text-lg font-medium text-gray-900 mt-4 mb-2 first:mt-0">{headerText}</h3>;
+                  return displayDescription
+                    .split("\n")
+                    .map((paragraph, index) => {
+                      if (paragraph.trim() === "") {
+                        return <br key={index} />;
                       }
-                    }
 
-                    // Check if it's a list item (starts with - or *)
-                    if (paragraph.trim().match(/^[-*]\s/)) {
-                      const listText = paragraph.replace(/^[-*]\s*/, '');
+                      // Check if it's a header (starts with #)
+                      if (paragraph.trim().startsWith("#")) {
+                        const headerLevel =
+                          paragraph.match(/^#+/)?.[0].length || 1;
+                        const headerText = paragraph.replace(/^#+\s*/, "");
+
+                        if (headerLevel === 1) {
+                          return (
+                            <h1
+                              key={index}
+                              className="text-2xl font-bold text-gray-900 mt-6 mb-4 first:mt-0"
+                            >
+                              {headerText}
+                            </h1>
+                          );
+                        } else if (headerLevel === 2) {
+                          return (
+                            <h2
+                              key={index}
+                              className="text-xl font-semibold text-gray-900 mt-5 mb-3 first:mt-0"
+                            >
+                              {headerText}
+                            </h2>
+                          );
+                        } else {
+                          return (
+                            <h3
+                              key={index}
+                              className="text-lg font-medium text-gray-900 mt-4 mb-2 first:mt-0"
+                            >
+                              {headerText}
+                            </h3>
+                          );
+                        }
+                      }
+
+                      // Check if it's a list item (starts with - or *)
+                      if (paragraph.trim().match(/^[-*]\s/)) {
+                        const listText = paragraph.replace(/^[-*]\s*/, "");
+                        return (
+                          <div key={index} className="flex items-start mb-2">
+                            <span className="text-purple-500 mr-2 mt-1">•</span>
+                            <span>{listText}</span>
+                          </div>
+                        );
+                      }
+
+                      // Regular paragraph
                       return (
-                        <div key={index} className="flex items-start mb-2">
-                          <span className="text-purple-500 mr-2 mt-1">•</span>
-                          <span>{listText}</span>
-                        </div>
+                        <p key={index} className="mb-4 last:mb-0">
+                          {paragraph}
+                        </p>
                       );
-                    }
-
-                    // Regular paragraph
-                    return (
-                      <p key={index} className="mb-4 last:mb-0">
-                        {paragraph}
-                      </p>
-                    );
-                  });
+                    });
                 })()}
               </div>
             </div>
