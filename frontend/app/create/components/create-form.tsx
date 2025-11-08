@@ -30,10 +30,10 @@ export function CreateForm() {
   } = useCreateForm();
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border p-8">
+    <div className="bg-white rounded-2xl shadow-sm border p-4 sm:p-6 md:p-8">
       <StepIndicator currentStep={currentStep} totalSteps={2} steps={steps} />
 
-      <div className="mt-8">
+      <div className="mt-4 sm:mt-6 md:mt-8">
         {currentStep === 1 && <BasicInfoStep form={form} onNext={nextStep} />}
 
         {currentStep === 2 && (

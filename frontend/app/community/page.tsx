@@ -65,10 +65,10 @@ export default function CommunityDiscoveryPage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 md:py-8">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading communities...</p>
+          <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-purple-600 mx-auto"></div>
+          <p className="mt-3 sm:mt-4 text-sm sm:text-base text-gray-600">Loading communities...</p>
         </div>
       </div>
     );
@@ -76,16 +76,16 @@ export default function CommunityDiscoveryPage() {
 
   if (error) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 md:py-8">
         <div className="text-center">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-            <h2 className="text-xl font-semibold text-red-800 mb-2">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 sm:p-6">
+            <h2 className="text-lg sm:text-xl font-semibold text-red-800 mb-2">
               Error Loading Communities
             </h2>
-            <p className="text-red-600">{error}</p>
+            <p className="text-sm sm:text-base text-red-600">{error}</p>
             <button
               onClick={loadCommunities}
-              className="mt-4 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition-colors"
+              className="mt-3 sm:mt-4 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition-colors text-sm sm:text-base"
             >
               Try Again
             </button>
@@ -96,52 +96,52 @@ export default function CommunityDiscoveryPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+    <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 md:py-8">
+      <div className="mb-4 sm:mb-6 md:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
           Discover Communities
         </h1>
-        <p className="text-gray-600">
+        <p className="text-sm sm:text-base text-gray-600">
           Explore all communities on the platform. Join by minting an NFT or
           participate in governance if you&apos;re already a member.
         </p>
       </div>
 
       {communities.length === 0 ? (
-        <div className="text-center py-12">
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-8">
-            <h2 className="text-xl font-semibold text-gray-800 mb-2">
+        <div className="text-center py-8 sm:py-12">
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 sm:p-6 md:p-8">
+            <h2 className="text-lg sm:text-xl font-semibold text-gray-800 mb-2">
               No Communities Yet
             </h2>
-            <p className="text-gray-600 mb-4">
+            <p className="text-sm sm:text-base text-gray-600 mb-4">
               Be the first to create a community on the platform!
             </p>
             <Link
               href="/create"
-              className="inline-block bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors"
+              className="inline-block bg-purple-600 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg hover:bg-purple-700 transition-colors text-sm sm:text-base"
             >
               Create Community
             </Link>
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {communities.map((community) => (
             <Link
               key={community.communityId.toString()}
               href={`/community/${community.communityId}`}
               className="block group"
             >
-              <div className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-lg hover:border-purple-300 transition-all duration-200 group-hover:scale-[1.02]">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2 group-hover:text-purple-600 transition-colors">
+              <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6 hover:shadow-lg hover:border-purple-300 transition-all duration-200 group-hover:scale-[1.02]">
+                <div className="flex items-start justify-between mb-3 sm:mb-4 gap-3">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2 group-hover:text-purple-600 transition-colors truncate">
                       Community #{community.communityId.toString()}
                     </h3>
-                    <div className="space-y-2 text-sm text-gray-600">
-                      <div className="flex items-center">
+                    <div className="space-y-1 sm:space-y-2 text-xs sm:text-sm text-gray-600">
+                      <div className="flex items-center flex-wrap gap-1">
                         <span className="font-medium">Creator:</span>
-                        <code className="ml-2 bg-gray-100 px-2 py-1 rounded text-xs">
+                        <code className="bg-gray-100 px-2 py-1 rounded text-xs truncate">
                           {community.creator.slice(0, 6)}...
                           {community.creator.slice(-4)}
                         </code>
@@ -155,7 +155,7 @@ export default function CommunityDiscoveryPage() {
                     </div>
                   </div>
                   <div className="flex-shrink-0">
-                    <div className="w-12 h-12 bg-gradient-to-br from-purple-400 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-purple-400 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-base sm:text-lg">
                       {community.communityId.toString()}
                     </div>
                   </div>
@@ -194,17 +194,17 @@ export default function CommunityDiscoveryPage() {
         </div>
       )}
 
-      <div className="mt-12 text-center">
-        <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">
+      <div className="mt-8 sm:mt-12 text-center">
+        <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-4 sm:p-6">
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">
             Ready to Create Your Own?
           </h2>
-          <p className="text-gray-600 mb-4">
+          <p className="text-sm sm:text-base text-gray-600 mb-4">
             Start your own community with custom governance and NFT access.
           </p>
           <Link
             href="/create"
-            className="inline-block bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors"
+            className="inline-block bg-purple-600 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg hover:bg-purple-700 transition-colors text-sm sm:text-base"
           >
             Create Community
           </Link>

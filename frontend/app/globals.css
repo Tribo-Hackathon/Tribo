@@ -40,3 +40,18 @@ button[data-testid="rk-account-button"]:hover {
 button[data-testid="rk-account-button"] > div {
   background-color: transparent !important;
 }
+
+/* Hide scrollbar but allow scrolling */
+.scrollbar-hide {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Chrome, Safari and Opera */
+}
+
+/* Smooth scrolling for tab navigation */
+.scrollbar-hide {
+  scroll-behavior: smooth;
+}

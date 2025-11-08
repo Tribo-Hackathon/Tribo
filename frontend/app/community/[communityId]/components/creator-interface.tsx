@@ -42,21 +42,24 @@ export function CreatorInterface({
   return (
     <div className="max-w-6xl mx-auto">
       {/* Creator Header */}
-      <div className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-xl p-6 mb-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">
+      <div className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-xl p-4 sm:p-6 mb-6 sm:mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="min-w-0 flex-1">
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
               Creator Dashboard
             </h2>
-            <p className="text-gray-600">
+            <p className="text-sm sm:text-base text-gray-600">
               Manage your community and governance settings
             </p>
           </div>
-          <div className="text-right">
-            <div className="bg-white rounded-lg p-4 border border-purple-200">
-              <div className="text-sm text-gray-600">Your Status</div>
-              <div className="text-lg font-semibold text-purple-600">
-                👑 Creator
+          <div className="flex-shrink-0">
+            <div className="bg-white rounded-lg p-3 sm:p-4 border border-purple-200">
+              <div className="text-xs sm:text-sm text-gray-600 mb-1">
+                Your Status
+              </div>
+              <div className="text-base sm:text-lg font-semibold text-purple-600 flex items-center gap-1.5">
+                <span>👑</span>
+                <span>Creator</span>
               </div>
               <div className="text-xs text-gray-500 mt-1">
                 Full Admin Access
@@ -67,13 +70,13 @@ export function CreatorInterface({
       </div>
 
       {/* Tab Navigation */}
-      <div className="border-b border-gray-200 mb-8">
-        <nav className="-mb-px flex space-x-8">
+      <div className="border-b border-gray-200 mb-6 sm:mb-8 overflow-x-auto scrollbar-hide">
+        <nav className="-mb-px flex space-x-4 sm:space-x-8 min-w-max">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => handleTabClick(tab.id)}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap flex-shrink-0 ${
                 activeTab === tab.id
                   ? "border-purple-500 text-purple-600"
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"

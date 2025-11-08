@@ -137,26 +137,26 @@ export function ProposalCard({
   const canVote = isConnected && isActive && userHasVoted === false;
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow">
+    <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6 hover:shadow-lg transition-shadow">
       {/* Header */}
-      <div className="flex items-start justify-between mb-4">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
         <div className="flex-1 min-w-0">
           <Link
             href={`/community/${communityId}/proposals/${proposal.id}`}
             className="block group"
           >
-            <h3 className="text-lg font-semibold text-gray-900 group-hover:text-purple-600 transition-colors truncate">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 group-hover:text-purple-600 transition-colors break-words">
               {proposal.title}
             </h3>
           </Link>
-          <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+          <p className="text-xs sm:text-sm text-gray-600 mt-1 line-clamp-2">
             {proposal.summary}
           </p>
         </div>
 
-        <div className="flex-shrink-0 ml-4">
+        <div className="flex-shrink-0 self-start sm:self-auto">
           <span
-            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStateStyle(
+            className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold border whitespace-nowrap ${getStateStyle(
               proposal.state
             )}`}
           >
@@ -166,7 +166,7 @@ export function ProposalCard({
       </div>
 
       {/* Proposal Info */}
-      <div className="flex items-center text-sm text-gray-500 mb-4 space-x-4">
+      <div className="flex flex-wrap items-center text-xs sm:text-sm text-gray-500 mb-4 gap-2 sm:gap-4">
         <div>
           <span className="font-medium">
             Proposal #{proposal.id.toString()}

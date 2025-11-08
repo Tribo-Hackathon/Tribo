@@ -25,17 +25,17 @@ export function BasicInfoStep({ form, onNext }: BasicInfoStepProps) {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4 sm:space-y-6 md:space-y-8">
       <div className="text-center space-y-2">
-        <h2 className="text-2xl font-bold text-gray-900">DAO Configuration</h2>
-        <p className="text-gray-600">
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-900">DAO Configuration</h2>
+        <p className="text-sm sm:text-base text-gray-600">
           Set up your decentralized autonomous organization
         </p>
       </div>
 
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="max-w-md mx-auto space-y-6"
+        className="max-w-md mx-auto space-y-4 sm:space-y-6"
       >
         <div className="space-y-2">
           <label

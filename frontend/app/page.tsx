@@ -45,16 +45,16 @@ export default function Home() {
   const { isConnected } = useAccount();
 
   return (
-    <div className="space-y-20">
+    <div className="space-y-8 sm:space-y-12 md:space-y-16 lg:space-y-20">
       {/* Hero Section */}
-      <section className="text-center space-y-8">
-        <div className="space-y-4">
-          <h1 className="text-4xl md:text-6xl font-bold text-gray-900 leading-tight">
+      <section className="text-center space-y-4 sm:space-y-6 md:space-y-8">
+        <div className="space-y-3 sm:space-y-4">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-6xl font-bold text-gray-900 leading-tight px-2">
             The new way to create,{" "}
             <span className="text-purple-600">scale</span> and{" "}
             <span className="text-purple-600">engage</span> creator communities
           </h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          <p className="text-base sm:text-lg md:text-xl text-gray-600 max-w-3xl mx-auto px-4">
             With NFTs, DAOs and automated Discord. Transform passive members
             into active co-pilots of your project.
           </p>
@@ -80,12 +80,12 @@ export default function Home() {
       </section>
 
       {/* Problem Section */}
-      <section className="bg-white rounded-2xl p-8 md:p-12 shadow-sm border">
-        <div className="max-w-4xl mx-auto text-center space-y-6">
-          <h2 className="text-3xl font-bold text-gray-900">
+      <section className="bg-white rounded-2xl p-4 sm:p-6 md:p-8 lg:p-12 shadow-sm border">
+        <div className="max-w-4xl mx-auto text-center space-y-4 sm:space-y-6">
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
             The Creator&apos;s Problem
           </h2>
-          <div className="grid md:grid-cols-2 gap-8 text-left">
+          <div className="grid md:grid-cols-2 gap-4 sm:gap-6 md:gap-8 text-left">
             <div>
               <h3 className="text-xl font-semibold mb-3 text-gray-900">
                 They get audience...
@@ -109,15 +109,17 @@ export default function Home() {
       </section>
 
       {/* Features Section */}
-      <section className="space-y-12">
-        <div className="text-center space-y-4">
-          <h2 className="text-3xl font-bold text-gray-900">Our Solution</h2>
-          <p className="text-xl text-gray-600">
+      <section className="space-y-6 sm:space-y-8 md:space-y-12">
+        <div className="text-center space-y-2 sm:space-y-4">
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
+            Our Solution
+          </h2>
+          <p className="text-base sm:text-lg md:text-xl text-gray-600 px-4">
             A complete platform to create engaged communities
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8">
           {features.map((feature, index) => {
             const Icon = feature.icon;
             return (
@@ -136,66 +138,66 @@ export default function Home() {
       </section>
 
       {/* How it Works */}
-      <section className="bg-gray-50 rounded-2xl p-8 md:p-12">
-        <div className="max-w-4xl mx-auto space-y-8">
-          <h2 className="text-3xl font-bold text-center text-gray-900">
+      <section className="bg-gray-50 rounded-2xl p-4 sm:p-6 md:p-8 lg:p-12">
+        <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6 md:space-y-8">
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-center text-gray-900">
             How It Works
           </h2>
 
-          <div className="space-y-6">
-            <div className="flex items-start space-x-4">
-              <div className="flex-shrink-0 w-8 h-8 bg-purple-600 text-white rounded-full flex items-center justify-center font-semibold">
+          <div className="space-y-4 sm:space-y-6">
+            <div className="flex items-start space-x-3 sm:space-x-4">
+              <div className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 bg-purple-600 text-white rounded-full flex items-center justify-center font-semibold text-sm sm:text-base">
                 1
               </div>
-              <div>
-                <h3 className="font-semibold text-lg text-gray-900">
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-base sm:text-lg text-gray-900">
                   Connect Wallet
                 </h3>
-                <p className="text-gray-600">
+                <p className="text-sm sm:text-base text-gray-600">
                   Creator connects their Web3 wallet
                 </p>
               </div>
             </div>
 
-            <div className="flex items-start space-x-4">
-              <div className="flex-shrink-0 w-8 h-8 bg-purple-600 text-white rounded-full flex items-center justify-center font-semibold">
+            <div className="flex items-start space-x-3 sm:space-x-4">
+              <div className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 bg-purple-600 text-white rounded-full flex items-center justify-center font-semibold text-sm sm:text-base">
                 2
               </div>
-              <div>
-                <h3 className="font-semibold text-lg text-gray-900">
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-base sm:text-lg text-gray-900">
                   Automatic Creation
                 </h3>
-                <p className="text-gray-600">
+                <p className="text-sm sm:text-base text-gray-600">
                   Discord server, thematic channels, integrated bot and DAO
                   dashboard are created automatically
                 </p>
               </div>
             </div>
 
-            <div className="flex items-start space-x-4">
-              <div className="flex-shrink-0 w-8 h-8 bg-purple-600 text-white rounded-full flex items-center justify-center font-semibold">
+            <div className="flex items-start space-x-3 sm:space-x-4">
+              <div className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 bg-purple-600 text-white rounded-full flex items-center justify-center font-semibold text-sm sm:text-base">
                 3
               </div>
-              <div>
-                <h3 className="font-semibold text-lg text-gray-900">
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-base sm:text-lg text-gray-900">
                   Launch NFT
                 </h3>
-                <p className="text-gray-600">
+                <p className="text-sm sm:text-base text-gray-600">
                   Create access NFTs that guarantee community entry and voting
                   power
                 </p>
               </div>
             </div>
 
-            <div className="flex items-start space-x-4">
-              <div className="flex-shrink-0 w-8 h-8 bg-purple-600 text-white rounded-full flex items-center justify-center font-semibold">
+            <div className="flex items-start space-x-3 sm:space-x-4">
+              <div className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 bg-purple-600 text-white rounded-full flex items-center justify-center font-semibold text-sm sm:text-base">
                 4
               </div>
-              <div>
-                <h3 className="font-semibold text-lg text-gray-900">
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-base sm:text-lg text-gray-900">
                   Active Governance
                 </h3>
-                <p className="text-gray-600">
+                <p className="text-sm sm:text-base text-gray-600">
                   Members participate by choosing topics, deciding content and
                   voting on events
                 </p>
@@ -206,32 +208,36 @@ export default function Home() {
       </section>
 
       {/* Benefits */}
-      <section className="text-center space-y-8">
-        <h2 className="text-3xl font-bold text-gray-900">Why This Matters</h2>
-        <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+      <section className="text-center space-y-4 sm:space-y-6 md:space-y-8">
+        <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
+          Why This Matters
+        </h2>
+        <p className="text-base sm:text-lg md:text-xl text-gray-600 max-w-3xl mx-auto px-4">
           Communities die when they&apos;re passive. We transform members into
           co-pilots of the creator.
         </p>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-4xl mx-auto">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 max-w-4xl mx-auto px-4">
           {benefits.map((benefit, index) => (
             <div
               key={index}
-              className="flex items-center space-x-3 bg-white p-4 rounded-lg shadow-sm"
+              className="flex items-center space-x-2 sm:space-x-3 bg-white p-3 sm:p-4 rounded-lg shadow-sm"
             >
-              <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />
-              <span className="text-gray-700">{benefit}</span>
+              <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 flex-shrink-0" />
+              <span className="text-sm sm:text-base text-gray-700">
+                {benefit}
+              </span>
             </div>
           ))}
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="bg-purple-600 text-white rounded-2xl p-8 md:p-12 text-center space-y-6">
-        <h2 className="text-3xl font-bold">
+      <section className="bg-purple-600 text-white rounded-2xl p-4 sm:p-6 md:p-8 lg:p-12 text-center space-y-4 sm:space-y-6">
+        <h2 className="text-xl sm:text-2xl md:text-3xl font-bold px-4">
           Ready to revolutionize your community?
         </h2>
-        <p className="text-xl opacity-90">
+        <p className="text-base sm:text-lg md:text-xl opacity-90 px-4">
           Start now and watch your members become true partners
         </p>
 
