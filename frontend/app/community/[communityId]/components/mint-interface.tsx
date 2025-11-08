@@ -31,18 +31,13 @@ export function MintInterface({
       return;
     }
 
-    if (!community.mintPrice) {
-      setError("Unable to determine mint price");
-      return;
-    }
-
     setIsMinting(true);
     setMintStatus("pending");
     setError(null);
     setTxHash(null);
 
     try {
-      const hash = await mintNFT(community.nft, community.mintPrice);
+      const hash = await mintNFT(community.nft);
       setTxHash(hash);
       setMintStatus("success");
 
@@ -52,7 +47,26 @@ export function MintInterface({
       }, 2000);
     } catch (err) {
       console.error("Mint failed:", err);
-      setError(err instanceof Error ? err.message : "Minting failed");
+
+      // Handle specific contract errors
+      let errorMessage = "Minting failed";
+      if (err instanceof Error) {
+        if (err.message.includes("Price feed unavailable")) {
+          errorMessage =
+            "Price feed temporarily unavailable. Please try again in a few minutes.";
+        } else if (err.message.includes("Incorrect payment amount")) {
+          errorMessage =
+            "Payment amount mismatch. Please refresh the page and try again.";
+        } else if (err.message.includes("User rejected")) {
+          errorMessage = "Transaction was rejected by user";
+        } else if (err.message.includes("insufficient funds")) {
+          errorMessage = "Insufficient funds to pay for gas and mint price";
+        } else {
+          errorMessage = err.message;
+        }
+      }
+
+      setError(errorMessage);
       setMintStatus("error");
     } finally {
       setIsMinting(false);
@@ -62,6 +76,10 @@ export function MintInterface({
   const mintPriceInEth = community.mintPrice
     ? formatEther(community.mintPrice)
     : "0";
+
+  const mintPriceInUSD = community.mintPriceUSD
+    ? (Number(community.mintPriceUSD) / 100).toFixed(2)
+    : "0.00";
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -103,6 +121,40 @@ export function MintInterface({
             <p className="text-gray-600 mb-6 text-lg">
               Mint an NFT to become a member and participate in governance
             </p>
+
+            {/* Dynamic Pricing Display */}
+            <div className="bg-white rounded-lg p-4 mb-6 border border-purple-200">
+              <div className="text-center">
+                <p className="text-sm text-gray-600 mb-2">Current Mint Price</p>
+                {community.mintPrice ? (
+                  <>
+                    <div className="flex items-center justify-center space-x-2">
+                      <span className="text-2xl font-bold text-purple-600">
+                        {mintPriceInEth} ETH
+                      </span>
+                      {community.mintPriceUSD && (
+                        <span className="text-lg text-gray-500">
+                          (${mintPriceInUSD})
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Price updates automatically via Chainlink
+                    </p>
+                  </>
+                ) : (
+                  <div className="text-center">
+                    <p className="text-sm text-yellow-600 mb-1">
+                      Pricing temporarily unavailable
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      You can still mint - the price will be calculated at mint
+                      time
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
 
             {/* Key Benefits */}
             <div className="space-y-3 mb-6">
@@ -256,8 +308,12 @@ export function MintInterface({
                   </div>
                 ) : mintStatus === "success" ? (
                   "Minted Successfully!"
+                ) : community.mintPrice ? (
+                  `Mint NFT for ${mintPriceInEth} ETH${
+                    community.mintPriceUSD ? ` ($${mintPriceInUSD})` : ""
+                  }`
                 ) : (
-                  `Mint NFT for ${mintPriceInEth} ETH`
+                  "Mint NFT"
                 )}
               </Button>
             </div>

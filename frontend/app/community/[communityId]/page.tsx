@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, use, useCallback } from "react";
+import { useEffect, useState, use, useCallback, useRef } from "react";
 import { useAccount } from "wagmi";
 import {
   getCommunityData,
@@ -24,52 +24,129 @@ export default function CommunityPage({ params }: CommunityPageProps) {
   );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const loadingRef = useRef(false); // Prevent multiple simultaneous calls
+  const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastErrorTimeRef = useRef<number>(0);
 
   const { address, isConnected } = useAccount();
 
-  const loadCommunityData = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const communityId = BigInt(resolvedParams.communityId);
-
-      // Add a small delay to debounce rapid calls
-      await new Promise((resolve) => setTimeout(resolve, 100));
-
-      const communityData = await getCommunityData(communityId);
-
-      if (!communityData) {
-        setError("Community not found");
+  const loadCommunityData = useCallback(
+    async (isRetry = false) => {
+      // Prevent multiple simultaneous calls
+      if (loadingRef.current) {
         return;
       }
 
-      setCommunity(communityData);
-
-      // If user is connected, get their status
-      if (isConnected && address) {
-        const status = await getUserCommunityStatus(address, communityData);
-        setUserStatus(status);
-      } else {
-        setUserStatus(null);
+      // Rate limit protection: if we had an error recently, wait before retrying
+      const now = Date.now();
+      const timeSinceLastError = now - lastErrorTimeRef.current;
+      if (!isRetry && timeSinceLastError < 5000) {
+        // 5 second cooldown
+        console.log("Rate limit cooldown active, skipping request");
+        return;
       }
-    } catch (err) {
-      console.error("Failed to load community:", err);
 
-      // Check if it's a rate limit error and show appropriate message
-      if (err instanceof Error && err.message.includes("rate limit")) {
-        setError("Too many requests. Please wait a moment and try again.");
-      } else {
-        setError("Failed to load community data");
+      try {
+        loadingRef.current = true;
+        setLoading(true);
+        setError(null);
+
+        // Clear any pending retry timeout
+        if (retryTimeoutRef.current) {
+          clearTimeout(retryTimeoutRef.current);
+          retryTimeoutRef.current = null;
+        }
+
+        const communityId = BigInt(resolvedParams.communityId);
+        const communityData = await getCommunityData(communityId);
+
+        if (!communityData) {
+          setError("Community not found");
+          return;
+        }
+
+        setCommunity(communityData);
+
+        // If user is connected, get their status
+        // Add a small delay to avoid rate limits if we just loaded community data
+        if (isConnected && address) {
+          // Small delay to avoid hitting rate limits immediately after community data fetch
+          await new Promise((resolve) => setTimeout(resolve, 500));
+
+          try {
+            const status = await getUserCommunityStatus(address, communityData);
+            setUserStatus(status);
+          } catch (err: unknown) {
+            console.warn(
+              "Failed to get user status (may be rate limited):",
+              err
+            );
+            // Set default status if we can't fetch it
+            setUserStatus({
+              role: "visitor",
+              nftBalance: BigInt(0),
+              isCreator: false,
+              canVote: false,
+            });
+          }
+        } else {
+          setUserStatus(null);
+        }
+      } catch (err: unknown) {
+        console.error("Failed to load community:", err);
+        lastErrorTimeRef.current = Date.now();
+
+        // Provide more helpful error messages
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        if (
+          errorMessage.includes("429") ||
+          errorMessage.includes("rate limit") ||
+          errorMessage.includes("over rate limit")
+        ) {
+          setError(
+            "RPC endpoint is rate-limited. Retrying automatically in 10 seconds..."
+          );
+
+          // Auto-retry after 10 seconds for rate limit errors
+          retryTimeoutRef.current = setTimeout(() => {
+            console.log("Auto-retrying after rate limit...");
+            loadCommunityData(true);
+          }, 10000);
+        } else {
+          setError("Failed to load community data. Please try again.");
+        }
+      } finally {
+        setLoading(false);
+        loadingRef.current = false;
       }
-    } finally {
-      setLoading(false);
-    }
-  }, [resolvedParams.communityId, address, isConnected]);
+    },
+    [resolvedParams.communityId, address, isConnected]
+  );
 
+  // Stable effect that only runs once per communityId change
   useEffect(() => {
     loadCommunityData();
-  }, [loadCommunityData]);
+
+    // Cleanup function to clear any pending retries
+    return () => {
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current);
+        retryTimeoutRef.current = null;
+      }
+    };
+  }, [resolvedParams.communityId, loadCommunityData]); // Include loadCommunityData
+
+  // Separate effect for when wallet connection changes
+  useEffect(() => {
+    // Only reload if we already have community data and wallet status changed
+    if (community && !loadingRef.current) {
+      const timeoutId = setTimeout(() => {
+        loadCommunityData();
+      }, 1000); // Small delay to avoid rapid re-requests
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [address, isConnected, community, loadCommunityData]);
 
   // Reload data when user mints successfully
   const handleMintSuccess = useCallback(() => {
@@ -110,7 +187,7 @@ export default function CommunityPage({ params }: CommunityPageProps) {
                 Go Back
               </button>
               <button
-                onClick={loadCommunityData}
+                onClick={() => loadCommunityData(true)}
                 className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 transition-colors"
               >
                 Try Again

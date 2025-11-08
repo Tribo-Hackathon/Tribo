@@ -6,6 +6,7 @@ export type {
   DeploymentResult,
   TransactionStatus,
 } from './types';
+export type { CommunityParams } from './constants';
 export { FACTORY_ABI } from './types';
 export {
   formatTransactionHash,

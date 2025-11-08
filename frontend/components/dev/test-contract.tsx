@@ -3,9 +3,9 @@
 import { useState } from "react";
 import { createPublicClient, http } from "viem";
 import {
+  BASE_CHAIN,
   CONTRACT_ADDRESSES,
   ENVIRONMENT,
-  BASE_CHAIN,
 } from "@/lib/contracts/config";
 
 // NFT Contract ABI - just the balanceOf function we need
@@ -33,10 +33,10 @@ export function TestContract() {
     setBalance(null);
 
     try {
-      // Create public client with custom Base chain from config
+      // Create public client with Base chain from config
       const client = createPublicClient({
         chain: BASE_CHAIN,
-        transport: http(ENVIRONMENT.RPC_URLS[0]),
+        transport: http(ENVIRONMENT.RPC_URL),
       });
 
       // Call the contract using NFT address from config

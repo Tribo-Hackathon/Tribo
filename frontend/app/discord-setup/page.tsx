@@ -30,9 +30,21 @@ function DiscordSetupContent() {
         }
 
         setCommunity(communityData);
-      } catch (err) {
+      } catch (err: unknown) {
         console.error("Failed to load community:", err);
-        setError("Failed to load community data");
+
+        // Provide more helpful error messages
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        if (
+          errorMessage.includes("429") ||
+          errorMessage.includes("rate limit") ||
+          errorMessage.includes("over rate limit") ||
+          errorMessage.includes("Rate limit")
+        ) {
+          setError("RPC endpoint is rate-limited. Please try again in a moment.");
+        } else {
+          setError("Failed to load community data");
+        }
       } finally {
         setLoading(false);
       }

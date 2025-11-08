@@ -1,50 +1,20 @@
-// Contract addresses configuration
+import { base } from 'viem/chains';
+
+// Contract addresses on Base network
 export const CONTRACT_ADDRESSES = {
   FACTORY: "0x897FFD5c0E830dC6F5C29aD648e6Ae00e8d6e900" as const,
   REGISTRY: "0x5c9ECC849e954aFDc7Ff2Ca22D09b9033060D9d9" as const,
-  // Placeholder NFT address for testing (this will be dynamic per community in production)
-  NFT: "0x0000000000000000000000000000000000000000" as const,
+  NFT: "0x0000000000000000000000000000000000000000" as const, // Will be deployed dynamically
+  GOV: "0x0000000000000000000000000000000000000000" as const, // Will be deployed dynamically
 } as const;
 
-// Base mainnet chain configuration with multiple RPC endpoints for redundancy
-export const BASE_CHAIN = {
-  id: 8453,
-  name: 'Base',
-  network: 'base',
-  nativeCurrency: {
-    decimals: 18,
-    name: 'Ether',
-    symbol: 'ETH',
-  },
-  rpcUrls: {
-    default: {
-      http: [
-        'https://mainnet.base.org',
-        'https://base-mainnet.public.blastapi.io',
-        'https://base.gateway.tenderly.co'
-      ]
-    },
-    public: {
-      http: [
-        'https://mainnet.base.org',
-        'https://base-mainnet.public.blastapi.io',
-        'https://base.gateway.tenderly.co'
-      ]
-    },
-  },
-  blockExplorers: {
-    default: { name: 'BaseScan', url: 'https://basescan.org' },
-  },
-} as const;
+// Base chain configuration (imported from viem/chains)
+export const BASE_CHAIN = base;
 
-// Environment configuration with fallback RPC URLs
+// Environment configuration for Base network
 export const ENVIRONMENT = {
-  RPC_URLS: [
-    "https://mainnet.base.org",
-    "https://base-mainnet.public.blastapi.io",
-    "https://base.gateway.tenderly.co"
-  ] as const,
-  CHAIN_ID: 8453 as const,
+  RPC_URL: BASE_CHAIN.rpcUrls.default.http[0],
+  CHAIN_ID: BASE_CHAIN.id,
   // Private key will be provided by MetaMask
   // Creator address will be provided by MetaMask
 } as const;

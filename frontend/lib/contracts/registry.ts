@@ -1,5 +1,5 @@
-import { CONTRACT_ADDRESSES } from './config';
-import { createResilientPublicClient, cachedContractRead } from './rpc-client';
+import { createPublicClient, http } from 'viem';
+import { BASE_CHAIN, CONTRACT_ADDRESSES, ENVIRONMENT } from './config';
 
 // Community Registry ABI - extracted from CommunityRegistry.json
 const REGISTRY_ABI = [
@@ -63,28 +63,65 @@ export interface Community {
 }
 
 /**
- * Get all communities from the registry
+ * Get all communities from the registry with retry logic for rate limits
  * @returns Promise<Community[]> - Array of all communities
  */
 export async function getAllCommunities(): Promise<Community[]> {
-  try {
-    const publicClient = createResilientPublicClient();
-    const cacheKey = 'all_communities';
+  const publicClient = createPublicClient({
+    chain: BASE_CHAIN,
+    transport: http(ENVIRONMENT.RPC_URL),
+  });
 
-    const communities = await cachedContractRead(
-      cacheKey,
-      () => publicClient.readContract({
+  const MAX_RETRIES = 3;
+  const INITIAL_DELAY = 1000; // 1 second
+
+  // Helper function to check if error is a rate limit error
+  const isRateLimitError = (error: unknown): boolean => {
+    if (error instanceof Error) {
+      return error.message.includes('429') ||
+             error.message.includes('rate limit') ||
+             error.message.includes('over rate limit');
+    }
+    const errorCode = (error as { code?: number })?.code;
+    return errorCode === -32016;
+  };
+
+  // Retry logic with exponential backoff
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    try {
+      const communities = await publicClient.readContract({
         address: CONTRACT_ADDRESSES.REGISTRY,
         abi: REGISTRY_ABI,
         functionName: 'getAllCommunities',
-      })
-    ) as Community[];
+      }) as Community[];
 
-    return communities;
-  } catch (error) {
-    console.error('Failed to fetch all communities:', error);
-    return [];
+      return communities;
+    } catch (error) {
+      const isRateLimit = isRateLimitError(error);
+
+      // If it's the last attempt or not a rate limit error, throw
+      if (attempt === MAX_RETRIES - 1 || !isRateLimit) {
+        console.error('Failed to fetch all communities:', error);
+        // For rate limit errors on last attempt, return empty array gracefully
+        if (isRateLimit) {
+          console.warn('Rate limit hit, returning empty array. Please try again later.');
+          return [];
+        }
+        // For other errors, also return empty array to prevent crashes
+        return [];
+      }
+
+      // Calculate exponential backoff delay
+      const delay = INITIAL_DELAY * Math.pow(2, attempt);
+      console.warn(`Rate limit error (attempt ${attempt + 1}/${MAX_RETRIES}), retrying in ${delay}ms...`);
+
+      // Wait before retrying
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
   }
+
+  // Should never reach here, but return empty array as fallback
+  return [];
 }
 
 /**
@@ -94,8 +131,10 @@ export async function getAllCommunities(): Promise<Community[]> {
  */
 export async function getCommunity(communityId: bigint): Promise<Community | null> {
   try {
-    const publicClient = createResilientPublicClient();
-    const cacheKey = `community_${communityId}`;
+    const publicClient = createPublicClient({
+      chain: BASE_CHAIN,
+      transport: http(ENVIRONMENT.RPC_URL),
+    });
 
     const community = await cachedContractRead(
       cacheKey,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { useEffect, useState, use, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAccount } from "wagmi";
 import Link from "next/link";
@@ -42,12 +42,38 @@ export default function ProposalPage({ params }: ProposalPageProps) {
   const [isVoting, setIsVoting] = useState(false);
   const [votingFor, setVotingFor] = useState<VoteSupport | null>(null);
 
-  // Load community and proposal data
-  useEffect(() => {
-    const loadData = async () => {
+  // Rate limiting protection
+  const loadingRef = useRef(false);
+  const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastErrorTimeRef = useRef<number>(0);
+
+  // Load community and proposal data with rate limiting protection
+  const loadData = useCallback(
+    async (isRetry = false) => {
+      // Prevent multiple simultaneous calls
+      if (loadingRef.current) {
+        return;
+      }
+
+      // Rate limit protection: if we had an error recently, wait before retrying
+      const now = Date.now();
+      const timeSinceLastError = now - lastErrorTimeRef.current;
+      if (!isRetry && timeSinceLastError < 5000) {
+        // 5 second cooldown
+        console.log("Rate limit cooldown active, skipping request");
+        return;
+      }
+
       try {
+        loadingRef.current = true;
         setLoading(true);
         setError(null);
+
+        // Clear any pending retry timeout
+        if (retryTimeoutRef.current) {
+          clearTimeout(retryTimeoutRef.current);
+          retryTimeoutRef.current = null;
+        }
 
         // Load community data
         const communityData = await getCommunityData(BigInt(communityId));
@@ -57,11 +83,30 @@ export default function ProposalPage({ params }: ProposalPageProps) {
         }
         setCommunity(communityData);
 
+        // Small delay to avoid rate limits
+        await new Promise((resolve) => setTimeout(resolve, 200));
+
         // Load user status if connected
-        if (address && isConnected && communityData) {
-          const status = await getUserCommunityStatus(address, communityData);
-          setUserStatus(status);
+        if (address && isConnected) {
+          try {
+            const status = await getUserCommunityStatus(address, communityData);
+            setUserStatus(status);
+          } catch (err) {
+            console.warn(
+              "Failed to get user status (may be rate limited):",
+              err
+            );
+            setUserStatus({
+              role: "visitor",
+              nftBalance: BigInt(0),
+              isCreator: false,
+              canVote: false,
+            });
+          }
         }
+
+        // Small delay before loading proposal data
+        await new Promise((resolve) => setTimeout(resolve, 200));
 
         // Load proposal data
         const proposalData = await getProposal(
@@ -74,29 +119,86 @@ export default function ProposalPage({ params }: ProposalPageProps) {
         }
         setProposal(proposalData);
 
-        // Check if user has voted
-        if (address && isConnected) {
+        // Check if user has voted (only if we have all required data)
+        if (address && isConnected && proposalData) {
           try {
+            await new Promise((resolve) => setTimeout(resolve, 300));
+            console.log("Checking if user has voted...");
             const hasVoted = await hasUserVoted(
               communityData.governor,
               BigInt(proposalId),
               address
             );
             setUserHasVoted(hasVoted);
+            console.log("User vote status:", hasVoted);
           } catch (err) {
-            console.error("Failed to check user vote:", err);
+            console.warn(
+              "Failed to check user vote (may be rate limited):",
+              err
+            );
+            // Set to null to indicate we couldn't check, rather than false
+            setUserHasVoted(null);
           }
+        } else {
+          // Clear vote status if user is not connected or we don't have proposal data
+          setUserHasVoted(null);
         }
-      } catch (err) {
+      } catch (err: unknown) {
         console.error("Failed to load proposal:", err);
-        setError("Failed to load proposal data");
+        lastErrorTimeRef.current = Date.now();
+
+        // Provide more helpful error messages
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        if (
+          errorMessage.includes("429") ||
+          errorMessage.includes("rate limit") ||
+          errorMessage.includes("over rate limit") ||
+          errorMessage.includes("Rate limit")
+        ) {
+          setError(
+            "RPC endpoint is rate-limited. Retrying automatically in 10 seconds..."
+          );
+
+          // Auto-retry after 10 seconds for rate limit errors
+          retryTimeoutRef.current = setTimeout(() => {
+            console.log("Auto-retrying after rate limit...");
+            loadData(true);
+          }, 10000);
+        } else {
+          setError("Failed to load proposal data. Please try again.");
+        }
       } finally {
         setLoading(false);
+        loadingRef.current = false;
+      }
+    },
+    [communityId, proposalId, address, isConnected]
+  );
+
+  // Stable effect that only runs once per proposal change
+  useEffect(() => {
+    loadData();
+
+    // Cleanup function to clear any pending retries
+    return () => {
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current);
+        retryTimeoutRef.current = null;
       }
     };
+  }, [communityId, proposalId]); // Only depend on proposal identifiers
 
-    loadData();
-  }, [communityId, proposalId, address, isConnected]);
+  // Separate effect for when wallet connection changes
+  useEffect(() => {
+    // Only reload if we already have community data and wallet status changed
+    if (community && !loadingRef.current) {
+      const timeoutId = setTimeout(() => {
+        loadData();
+      }, 1000); // Small delay to avoid rapid re-requests
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [address, isConnected, community, loadData]);
 
   // Handle voting
   const handleVote = async (support: VoteSupport) => {
@@ -136,36 +238,53 @@ export default function ProposalPage({ params }: ProposalPageProps) {
     );
   }
 
-  if (error || !community || !proposal) {
+  if (
+    error ||
+    (!community && !loading) ||
+    (!proposal && !loading && community)
+  ) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="text-red-500 text-6xl mb-4">⚠️</div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            {error || "Proposal Not Found"}
-          </h1>
-          <p className="text-gray-600 mb-6">
-            The proposal you're looking for doesn't exist or couldn't be loaded.
-          </p>
-          <Link
-            href={`/community/${communityId}`}
-            className="inline-flex items-center px-6 py-3 text-sm font-medium text-white bg-purple-600 border border-transparent rounded-lg hover:bg-purple-700 transition-colors duration-200 shadow-sm"
-          >
-            <svg
-              className="w-4 h-4 mr-2"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
-            Back to Community
-          </Link>
+          <div className="bg-red-50 border border-red-200 rounded-lg p-8 max-w-md mx-auto">
+            <div className="text-red-400 text-6xl mb-4">❌</div>
+            <h1 className="text-xl font-semibold text-red-800 mb-2">
+              {error || "Proposal Not Found"}
+            </h1>
+            <p className="text-red-600 mb-4">
+              {error?.includes("rate-limited")
+                ? "Please wait for the automatic retry or try again manually."
+                : "The proposal you're looking for doesn't exist or couldn't be loaded."}
+            </p>
+            <div className="space-x-4">
+              <Link
+                href={`/community/${communityId}`}
+                className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition-colors"
+              >
+                Back to Community
+              </Link>
+              <button
+                onClick={() => loadData(true)}
+                className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 transition-colors"
+              >
+                Try Again
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Early return if proposal or community is not loaded
+  if (!proposal || !community) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading proposal...</p>
+          </div>
         </div>
       </div>
     );
@@ -190,7 +309,8 @@ export default function ProposalPage({ params }: ProposalPageProps) {
       : 0;
 
   const isActive = proposal.state === ProposalState.ACTIVE;
-  const canVote = isConnected && isActive && userHasVoted === false;
+  const canVote = isConnected && isActive && userHasVoted === false && !loading;
+  const voteStatusLoading = isConnected && userHasVoted === null && !loading;
 
   // Get state styling
   const getStateStyle = (state: ProposalState) => {
@@ -327,6 +447,16 @@ export default function ProposalPage({ params }: ProposalPageProps) {
                     ></div>
                   </div>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* Vote Status Loading */}
+          {voteStatusLoading && (
+            <div className="px-6 py-4 border-b border-gray-200">
+              <div className="flex items-center text-sm text-gray-600">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-600 mr-2"></div>
+                Checking your vote status...
               </div>
             </div>
           )}

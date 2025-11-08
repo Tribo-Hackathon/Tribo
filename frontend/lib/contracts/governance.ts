@@ -1,6 +1,5 @@
-import { createWalletClient, custom, parseAbiItem } from 'viem';
-import { BASE_CHAIN } from './config';
-import { createResilientPublicClient, cachedContractRead } from './rpc-client';
+import { createPublicClient, createWalletClient, custom, http, parseAbiItem } from 'viem';
+import { BASE_CHAIN, ENVIRONMENT } from './config';
 
 // Governor contract ABI - key functions for governance
 const GOVERNOR_ABI = [
@@ -320,8 +319,10 @@ export async function getProposalState(
   proposalId: bigint
 ): Promise<ProposalState> {
   try {
-    const publicClient = createResilientPublicClient();
-    const cacheKey = `state_${governorAddress}_${proposalId}`;
+    const publicClient = createPublicClient({
+      chain: BASE_CHAIN,
+      transport: http(ENVIRONMENT.RPC_URL),
+    });
 
     const state = await cachedContractRead(
       cacheKey,
@@ -351,8 +352,10 @@ export async function getProposalVotes(
   proposalId: bigint
 ): Promise<ProposalVotes> {
   try {
-    const publicClient = createResilientPublicClient();
-    const cacheKey = `votes_${governorAddress}_${proposalId}`;
+    const publicClient = createPublicClient({
+      chain: BASE_CHAIN,
+      transport: http(ENVIRONMENT.RPC_URL),
+    });
 
     const votes = await cachedContractRead(
       cacheKey,
@@ -386,7 +389,10 @@ export async function getUserVotingPower(
   userAddress: string
 ): Promise<bigint> {
   try {
-    const publicClient = createResilientPublicClient();
+    const publicClient = createPublicClient({
+      chain: BASE_CHAIN,
+      transport: http(ENVIRONMENT.RPC_URL),
+    });
 
     // Get the current block number
     const currentBlock = await publicClient.getBlockNumber();
@@ -419,7 +425,10 @@ export async function getDelegatedTo(
   userAddress: string
 ): Promise<string> {
   try {
-    const publicClient = createResilientPublicClient();
+    const publicClient = createPublicClient({
+      chain: BASE_CHAIN,
+      transport: http(ENVIRONMENT.RPC_URL),
+    });
 
     const delegatedTo = await publicClient.readContract({
       address: nftAddress as `0x${string}`,
@@ -496,7 +505,10 @@ export async function getUserVotingPowerAtBlock(
   blockNumber: bigint
 ): Promise<bigint> {
   try {
-    const publicClient = createResilientPublicClient();
+    const publicClient = createPublicClient({
+      chain: BASE_CHAIN,
+      transport: http(ENVIRONMENT.RPC_URL),
+    });
 
     const votingPower = await publicClient.readContract({
       address: governorAddress as `0x${string}`,
@@ -513,7 +525,7 @@ export async function getUserVotingPowerAtBlock(
 }
 
 /**
- * Check if user has voted on a proposal
+ * Check if user has voted on a proposal with rate limiting protection
  * @param governorAddress - The governor contract address
  * @param proposalId - The proposal ID
  * @param userAddress - The user's address
@@ -524,21 +536,61 @@ export async function hasUserVoted(
   proposalId: bigint,
   userAddress: string
 ): Promise<boolean> {
-  try {
-    const publicClient = createResilientPublicClient();
+  const MAX_RETRIES = 3;
+  const INITIAL_DELAY = 1000; // 1 second
 
-    const hasVoted = await publicClient.readContract({
-      address: governorAddress as `0x${string}`,
-      abi: GOVERNOR_ABI,
-      functionName: 'hasVoted',
-      args: [proposalId, userAddress as `0x${string}`],
-    });
+  // Helper function to check if error is a rate limit error
+  const isRateLimitError = (error: unknown): boolean => {
+    if (error instanceof Error) {
+      return error.message.includes('429') ||
+             error.message.includes('rate limit') ||
+             error.message.includes('over rate limit');
+    }
+    const errorCode = (error as { code?: number })?.code;
+    return errorCode === -32016;
+  };
 
-    return hasVoted as boolean;
-  } catch (error) {
-    console.error('Failed to check if user voted:', error);
-    return false;
+  // Retry logic with exponential backoff
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    try {
+      const publicClient = createPublicClient({
+        chain: BASE_CHAIN,
+        transport: http(ENVIRONMENT.RPC_URL),
+      });
+
+      const hasVoted = await publicClient.readContract({
+        address: governorAddress as `0x${string}`,
+        abi: GOVERNOR_ABI,
+        functionName: 'hasVoted',
+        args: [proposalId, userAddress as `0x${string}`],
+      });
+
+      return hasVoted as boolean;
+    } catch (error) {
+      const isRateLimit = isRateLimitError(error);
+
+      // If it's the last attempt or not a rate limit error, return false
+      if (attempt === MAX_RETRIES - 1 || !isRateLimit) {
+        if (isRateLimit) {
+          console.warn('Rate limit hit when checking user vote, returning false. Please try again later.');
+        } else {
+          console.error('Failed to check if user voted:', error);
+        }
+        // Return false as default (assume user hasn't voted)
+        return false;
+      }
+
+      // Calculate exponential backoff delay
+      const delay = INITIAL_DELAY * Math.pow(2, attempt);
+      console.warn(`Rate limit error when checking user vote (attempt ${attempt + 1}/${MAX_RETRIES}), retrying in ${delay}ms...`);
+
+      // Wait before retrying
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
   }
+
+  // Should never reach here, but return false as fallback
+  return false;
 }
 
 /**
@@ -548,7 +600,10 @@ export async function hasUserVoted(
  */
 export async function getProposalThreshold(governorAddress: string): Promise<bigint> {
   try {
-    const publicClient = createResilientPublicClient();
+    const publicClient = createPublicClient({
+      chain: BASE_CHAIN,
+      transport: http(ENVIRONMENT.RPC_URL),
+    });
 
     const threshold = await publicClient.readContract({
       address: governorAddress as `0x${string}`,
@@ -574,21 +629,73 @@ export async function getAllProposals(
   fromBlock?: bigint
 ): Promise<Proposal[]> {
   try {
-    const publicClient = createResilientPublicClient();
-    const cacheKey = `proposals_${governorAddress}_${fromBlock || 0}`;
+    const publicClient = createPublicClient({
+      chain: BASE_CHAIN,
+      transport: http(ENVIRONMENT.RPC_URL),
+    });
 
-    // Get ProposalCreated events with caching and retry logic
-    const logs = await cachedContractRead(
-      cacheKey,
-      () => publicClient.getLogs({
+    // Try to get the current block number to use a more recent starting point
+    // This avoids querying from block 0 which can be very large and timeout
+    let startBlock = fromBlock;
+    if (!startBlock) {
+      try {
+        const currentBlock = await publicClient.getBlockNumber();
+        // Start from 100,000 blocks ago (approximately 2-3 days on Base)
+        // This is a reasonable range that should capture recent proposals
+        startBlock = currentBlock > BigInt(100000)
+          ? currentBlock - BigInt(100000)
+          : BigInt(0);
+      } catch (error) {
+        console.warn('Failed to get current block number, using block 0:', error);
+        startBlock = BigInt(0);
+      }
+    }
+
+    // Get ProposalCreated events with error handling
+    let logs;
+    try {
+      logs = await publicClient.getLogs({
         address: governorAddress as `0x${string}`,
         event: parseAbiItem('event ProposalCreated(uint256 proposalId, address proposer, address[] targets, uint256[] values, string[] signatures, bytes[] calldatas, uint256 voteStart, uint256 voteEnd, string description)'),
-        fromBlock: fromBlock || BigInt(0),
-      })
-    );
+        fromBlock: startBlock,
+      });
+    } catch (error: unknown) {
+      // If the query fails (e.g., 503, timeout), try with a smaller range
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorCode = (error as { code?: number })?.code;
+
+      if (errorMessage.includes('503') ||
+          errorMessage.includes('timeout') ||
+          errorMessage.includes('no backend') ||
+          errorCode === -32011) {
+        console.warn('RPC endpoint unavailable, trying with smaller block range:', error);
+
+        // Try with a much smaller range (last 10,000 blocks)
+        try {
+          const currentBlock = await publicClient.getBlockNumber();
+          const recentBlock = currentBlock > BigInt(10000)
+            ? currentBlock - BigInt(10000)
+            : BigInt(0);
+
+          logs = await publicClient.getLogs({
+            address: governorAddress as `0x${string}`,
+            event: parseAbiItem('event ProposalCreated(uint256 proposalId, address proposer, address[] targets, uint256[] values, string[] signatures, bytes[] calldatas, uint256 voteStart, uint256 voteEnd, string description)'),
+            fromBlock: recentBlock,
+          });
+        } catch (retryError) {
+          console.error('Failed to get proposals even with smaller range:', retryError);
+          // Return empty array - UI will handle this gracefully
+          return [];
+        }
+      } else {
+        throw error;
+      }
+    }
 
     // Process each proposal
     const proposals: Proposal[] = [];
+    let consecutiveRateLimitErrors = 0;
+    const MAX_CONSECUTIVE_RATE_LIMIT_ERRORS = 3;
 
     for (const log of logs) {
       try {
@@ -612,35 +719,100 @@ export async function getAllProposals(
           title = description || title;
         }
 
-        // Get current state and votes with caching and delays
-        const [state, votes] = await Promise.all([
-          getProposalState(governorAddress, proposalId),
-          getProposalVotes(governorAddress, proposalId),
-        ]);
+        // Get current state and votes sequentially to avoid rate limits
+        // Add error handling for each call
+        let state = ProposalState.PENDING;
+        let votes: ProposalVotes = { againstVotes: BigInt(0), forVotes: BigInt(0), abstainVotes: BigInt(0) };
+        let snapshot = BigInt(0);
+        let deadline = BigInt(0);
 
-        // Add delay before additional calls to avoid rate limits
-        await new Promise(resolve => setTimeout(resolve, 100));
+        // Helper function to check if error is a rate limit error
+        const isRateLimitError = (error: unknown): boolean => {
+          if (error instanceof Error) {
+            return error.message.includes('429') ||
+                   error.message.includes('rate limit') ||
+                   error.message.includes('over rate limit');
+          }
+          const errorCode = (error as { code?: number })?.code;
+          return errorCode === -32016;
+        };
 
-        const [snapshot, deadline] = await Promise.all([
-          cachedContractRead(
-            `snapshot_${governorAddress}_${proposalId}`,
-            () => publicClient.readContract({
-              address: governorAddress as `0x${string}`,
-              abi: GOVERNOR_ABI,
-              functionName: 'proposalSnapshot',
-              args: [proposalId],
-            })
-          ),
-          cachedContractRead(
-            `deadline_${governorAddress}_${proposalId}`,
-            () => publicClient.readContract({
-              address: governorAddress as `0x${string}`,
-              abi: GOVERNOR_ABI,
-              functionName: 'proposalDeadline',
-              args: [proposalId],
-            })
-          ),
-        ]);
+        try {
+          state = await getProposalState(governorAddress, proposalId);
+          consecutiveRateLimitErrors = 0; // Reset on success
+        } catch (error) {
+          if (isRateLimitError(error)) {
+            consecutiveRateLimitErrors++;
+            if (consecutiveRateLimitErrors >= MAX_CONSECUTIVE_RATE_LIMIT_ERRORS) {
+              console.warn(`Too many rate limit errors (${consecutiveRateLimitErrors}), stopping proposal processing`);
+              break; // Stop processing remaining proposals
+            }
+          }
+          console.warn(`Failed to get state for proposal ${proposalId}:`, error);
+          // Continue with default state
+        }
+
+        try {
+          votes = await getProposalVotes(governorAddress, proposalId);
+          consecutiveRateLimitErrors = 0; // Reset on success
+        } catch (error) {
+          if (isRateLimitError(error)) {
+            consecutiveRateLimitErrors++;
+            if (consecutiveRateLimitErrors >= MAX_CONSECUTIVE_RATE_LIMIT_ERRORS) {
+              console.warn(`Too many rate limit errors (${consecutiveRateLimitErrors}), stopping proposal processing`);
+              break; // Stop processing remaining proposals
+            }
+          }
+          console.warn(`Failed to get votes for proposal ${proposalId}:`, error);
+          // Continue with default votes
+        }
+
+        try {
+          snapshot = await publicClient.readContract({
+            address: governorAddress as `0x${string}`,
+            abi: GOVERNOR_ABI,
+            functionName: 'proposalSnapshot',
+            args: [proposalId],
+          }) as bigint;
+          consecutiveRateLimitErrors = 0; // Reset on success
+        } catch (error) {
+          if (isRateLimitError(error)) {
+            consecutiveRateLimitErrors++;
+            if (consecutiveRateLimitErrors >= MAX_CONSECUTIVE_RATE_LIMIT_ERRORS) {
+              console.warn(`Too many rate limit errors (${consecutiveRateLimitErrors}), stopping proposal processing`);
+              break; // Stop processing remaining proposals
+            }
+          }
+          console.warn(`Failed to get snapshot for proposal ${proposalId}:`, error);
+          // Continue with default snapshot
+        }
+
+        try {
+          deadline = await publicClient.readContract({
+            address: governorAddress as `0x${string}`,
+            abi: GOVERNOR_ABI,
+            functionName: 'proposalDeadline',
+            args: [proposalId],
+          }) as bigint;
+          consecutiveRateLimitErrors = 0; // Reset on success
+        } catch (error) {
+          if (isRateLimitError(error)) {
+            consecutiveRateLimitErrors++;
+            if (consecutiveRateLimitErrors >= MAX_CONSECUTIVE_RATE_LIMIT_ERRORS) {
+              console.warn(`Too many rate limit errors (${consecutiveRateLimitErrors}), stopping proposal processing`);
+              break; // Stop processing remaining proposals
+            }
+          }
+          console.warn(`Failed to get deadline for proposal ${proposalId}:`, error);
+          // Continue with default deadline
+        }
+
+        // Add a delay between proposals to avoid rate limits
+        // Use longer delay if we've hit rate limit errors recently
+        if (logs.indexOf(log) < logs.length - 1) {
+          const delay = consecutiveRateLimitErrors > 0 ? 500 : 200; // 500ms if rate limited, 200ms otherwise
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
 
         proposals.push({
           id: proposalId,
@@ -683,14 +855,50 @@ export async function getProposal(
   governorAddress: string,
   proposalId: bigint
 ): Promise<Proposal | null> {
-  try {
-    // Get all proposals and find the specific one
-    const proposals = await getAllProposals(governorAddress);
-    return proposals.find(p => p.id === proposalId) || null;
-  } catch (error) {
-    console.error('Failed to get proposal:', error);
-    return null;
+  const MAX_RETRIES = 2;
+  const INITIAL_DELAY = 1000; // 1 second
+
+  // Helper function to check if error is a rate limit error
+  const isRateLimitError = (error: unknown): boolean => {
+    if (error instanceof Error) {
+      return error.message.includes('429') ||
+             error.message.includes('rate limit') ||
+             error.message.includes('over rate limit');
+    }
+    const errorCode = (error as { code?: number })?.code;
+    return errorCode === -32016;
+  };
+
+  // Retry logic with exponential backoff
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    try {
+      // Get all proposals and find the specific one
+      const proposals = await getAllProposals(governorAddress);
+      return proposals.find(p => p.id === proposalId) || null;
+    } catch (error) {
+      const isRateLimit = isRateLimitError(error);
+
+      // If it's the last attempt or not a rate limit error, return null
+      if (attempt === MAX_RETRIES - 1 || !isRateLimit) {
+        if (isRateLimit) {
+          console.warn('Rate limit hit when getting proposal, returning null. Please try again later.');
+        } else {
+          console.error('Failed to get proposal:', error);
+        }
+        return null;
+      }
+
+      // Calculate exponential backoff delay
+      const delay = INITIAL_DELAY * Math.pow(2, attempt);
+      console.warn(`Rate limit error when getting proposal (attempt ${attempt + 1}/${MAX_RETRIES}), retrying in ${delay}ms...`);
+
+      // Wait before retrying
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
   }
+
+  // Should never reach here, but return null as fallback
+  return null;
 }
 
 /**

@@ -317,12 +317,12 @@ export function PreviewStep({
 
               {transactionStatus.status === "error" && (
                 <>
-                  <AlertCircle className="w-5 h-5 text-red-600" />
-                  <div>
+                  <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-red-900">
                       Deployment Failed
                     </h3>
-                    <p className="text-sm text-red-800">
+                    <p className="text-sm text-red-800 break-words whitespace-pre-wrap">
                       {transactionStatus.error ||
                         "An unknown error occurred during deployment."}
                     </p>
