@@ -1,0 +1,41 @@
+[
+  {
+    "type": "function",
+    "name": "deploy",
+    "inputs": [
+      {
+        "name": "token",
+        "type": "address",
+        "internalType": "contract IVotes"
+      },
+      {
+        "name": "votingDelay",
+        "type": "uint48",
+        "internalType": "uint48"
+      },
+      {
+        "name": "votingPeriod",
+        "type": "uint32",
+        "internalType": "uint32"
+      },
+      {
+        "name": "proposalThreshold",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "quorumNumerator",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "gov",
+        "type": "address",
+        "internalType": "contract CommunityGovernor"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  }
+]
