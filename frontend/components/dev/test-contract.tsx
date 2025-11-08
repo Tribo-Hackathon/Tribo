@@ -78,7 +78,7 @@ export function TestContract() {
         <div>
           <span className="font-medium">RPC URL:</span>{" "}
           <code className="bg-gray-200 px-2 py-1 rounded text-xs">
-            {ENVIRONMENT.RPC_URLS[0]}
+            {ENVIRONMENT.RPC_URL}
           </code>
         </div>
         <div>

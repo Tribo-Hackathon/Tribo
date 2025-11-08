@@ -1,5 +1,6 @@
 import { createPublicClient, http } from 'viem';
 import { BASE_CHAIN, CONTRACT_ADDRESSES, ENVIRONMENT } from './config';
+import { cachedContractRead } from './rpc-client';
 
 // Community Registry ABI - extracted from CommunityRegistry.json
 const REGISTRY_ABI = [
@@ -136,6 +137,7 @@ export async function getCommunity(communityId: bigint): Promise<Community | nul
       transport: http(ENVIRONMENT.RPC_URL),
     });
 
+    const cacheKey = `community-${communityId}`;
     const community = await cachedContractRead(
       cacheKey,
       () => publicClient.readContract({

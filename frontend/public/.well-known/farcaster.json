@@ -1,34 +1,32 @@
 {
   "accountAssociation": {
-    "header": "",
-    "payload": "",
-    "signature": ""
+    "header": "eyJmaWQiOjE0NDg1ODksInR5cGUiOiJjdXN0b2R5Iiwia2V5IjoiMHg4MzExNjBCRTYzYmRBODVENjgxMEJENkY4Qjg0ODkxNDkzQkMzOUJjIn0",
+    "payload": "eyJkb21haW4iOiJ0cmliby52b3J0ZXhmZG4ueHl6In0",
+    "signature": "qxlfgCSP7GwmlZolJcGFKA3nA4+9FAVwiPXTSt4cxEs+vodMVYn0+1Y44DR1BTVQaOk7kDt7KN4RyYcrqLA08hw="
   },
   "baseBuilder": {
-    "ownerAddress": "0x"
+    "ownerAddress": "0x865004d474b37E50b48FeC7a430E0dcA039Af826"
   },
   "miniapp": {
     "version": "1",
     "name": "Creator DAO Platform",
-    "homeUrl": "https://your-app.com",
-    "iconUrl": "https://your-app.com/favicon.ico",
-    "splashImageUrl": "https://your-app.com/splash.png",
+    "homeUrl": "https://tribo.vortexfdn.xyz/",
+    "iconUrl": "https://tribo.vortexfdn.xyz/icon.png",
+    "splashImageUrl": "https://tribo.vortexfdn.xyz/Pasted%20image.png",
     "splashBackgroundColor": "#7C3AED",
-    "webhookUrl": "https://your-app.com/api/webhook",
-    "subtitle": "Create, scale and engage creator communities",
+    "webhookUrl": "https://tribo.vortexfdn.xyz/api/webhook",
+    "subtitle": "Create and scale communities",
     "description": "The new way to create, scale and engage creator communities with NFTs, DAOs and automated Discord. Transform passive members into active co-pilots of your project.",
     "screenshotUrls": [
-      "https://your-app.com/screenshot1.png",
-      "https://your-app.com/screenshot2.png",
-      "https://your-app.com/screenshot3.png"
+      "https://tribo.vortexfdn.xyz/Pasted%20image.png"
     ],
     "primaryCategory": "social",
-    "tags": ["dao", "governance", "nft", "discord", "community", "creator", "baseapp"],
-    "heroImageUrl": "https://your-app.com/hero.png",
-    "tagline": "Transform members into co-pilots",
+    "tags": ["dao", "governance", "nft", "discord", "community"],
+    "heroImageUrl": "https://tribo.vortexfdn.xyz/Pasted%20image.png",
+    "tagline": "Members become project pilots!",
     "ogTitle": "Creator DAO Platform",
     "ogDescription": "The new way to create, scale and engage creator communities with NFTs, DAOs and automated Discord",
-    "ogImageUrl": "https://your-app.com/og.png",
+    "ogImageUrl": "https://tribo.vortexfdn.xyz/Pasted%20image.png",
     "noindex": true
   }
 }

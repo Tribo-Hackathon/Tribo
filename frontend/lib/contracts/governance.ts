@@ -1,5 +1,6 @@
 import { createPublicClient, createWalletClient, custom, http, parseAbiItem } from 'viem';
 import { BASE_CHAIN, ENVIRONMENT } from './config';
+import { cachedContractRead } from './rpc-client';
 
 // Governor contract ABI - key functions for governance
 const GOVERNOR_ABI = [
@@ -324,6 +325,7 @@ export async function getProposalState(
       transport: http(ENVIRONMENT.RPC_URL),
     });
 
+    const cacheKey = `proposal-state-${governorAddress}-${proposalId}`;
     const state = await cachedContractRead(
       cacheKey,
       () => publicClient.readContract({
@@ -357,6 +359,7 @@ export async function getProposalVotes(
       transport: http(ENVIRONMENT.RPC_URL),
     });
 
+    const cacheKey = `proposal-votes-${governorAddress}-${proposalId}`;
     const votes = await cachedContractRead(
       cacheKey,
       () => publicClient.readContract({

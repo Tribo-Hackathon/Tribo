@@ -1,22 +1,17 @@
-import { createPublicClient, http, PublicClient } from 'viem';
+import { createPublicClient, http } from 'viem';
 import { BASE_CHAIN, ENVIRONMENT } from './config';
 
 // Cache for storing contract call results
 const contractCallCache = new Map<string, { data: unknown; timestamp: number }>();
 const CACHE_DURATION = 30000; // 30 seconds cache
 
-// RPC client with retry logic and fallback endpoints
-let currentRpcIndex = 0;
-
 /**
- * Create a public client with retry logic and fallback RPC endpoints
+ * Create a public client with retry logic
  */
-export function createResilientPublicClient(): PublicClient {
-  const rpcUrl = ENVIRONMENT.RPC_URLS[currentRpcIndex % ENVIRONMENT.RPC_URLS.length];
-
+export function createResilientPublicClient() {
   return createPublicClient({
     chain: BASE_CHAIN,
-    transport: http(rpcUrl, {
+    transport: http(ENVIRONMENT.RPC_URL, {
       timeout: 10000, // 10 second timeout
       retryCount: 2,
       retryDelay: 1000, // 1 second delay between retries
@@ -55,10 +50,9 @@ export async function cachedContractRead<T>(
     } catch (error: unknown) {
       lastError = error instanceof Error ? error : new Error(String(error));
 
-      // If it's a rate limit error (429), try next RPC endpoint
+      // If it's a rate limit error (429), wait before retry
       if (error instanceof Error && (error.message.includes('rate limit') || error.message.includes('429'))) {
-        currentRpcIndex = (currentRpcIndex + 1) % ENVIRONMENT.RPC_URLS.length;
-        console.warn(`Rate limit hit, switching to RPC endpoint ${currentRpcIndex + 1}`);
+        console.warn(`Rate limit hit, waiting before retry attempt ${attempt + 1}`);
 
         // Wait a bit before retry
         await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
