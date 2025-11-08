@@ -5,7 +5,6 @@ export { COMMUNITY_DEFAULTS } from './constants';
 export type {
   DeploymentResult,
   TransactionStatus,
-  CommunityParams
 } from './types';
 export { FACTORY_ABI } from './types';
 export {

@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { getCommunityData, CommunityData } from "@/lib/contracts/community";
 import { DiscordIntegration } from "@/app/community/[communityId]/components/discord-integration";
 import { Button } from "@/components/ui/button";
 
-export default function DiscordSetupPage() {
+function DiscordSetupContent() {
   const [community, setCommunity] = useState<CommunityData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -185,5 +185,22 @@ export default function DiscordSetupPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function DiscordSetupPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading...</p>
+          </div>
+        </div>
+      }
+    >
+      <DiscordSetupContent />
+    </Suspense>
   );
 }

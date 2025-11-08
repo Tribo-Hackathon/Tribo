@@ -58,11 +58,8 @@ export default function ProposalPage({ params }: ProposalPageProps) {
         setCommunity(communityData);
 
         // Load user status if connected
-        if (address && isConnected) {
-          const status = await getUserCommunityStatus(
-            BigInt(communityId),
-            address
-          );
+        if (address && isConnected && communityData) {
+          const status = await getUserCommunityStatus(address, communityData);
           setUserStatus(status);
         }
 
@@ -233,7 +230,9 @@ export default function ProposalPage({ params }: ProposalPageProps) {
                 d="M15 19l-7-7 7-7"
               />
             </svg>
-            Back to {community.name}
+            Back to{" "}
+            {community.nftName ||
+              `Community #${community.communityId.toString()}`}
           </Link>
         </div>
 
