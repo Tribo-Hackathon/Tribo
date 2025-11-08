@@ -1,5 +1,5 @@
-import { createPublicClient, http } from 'viem';
-import { ANVIL_CHAIN, CONTRACT_ADDRESSES, ENVIRONMENT } from './config';
+import { CONTRACT_ADDRESSES } from './config';
+import { createResilientPublicClient, cachedContractRead } from './rpc-client';
 
 // Community Registry ABI - extracted from CommunityRegistry.json
 const REGISTRY_ABI = [
@@ -68,16 +68,17 @@ export interface Community {
  */
 export async function getAllCommunities(): Promise<Community[]> {
   try {
-    const publicClient = createPublicClient({
-      chain: ANVIL_CHAIN,
-      transport: http(ENVIRONMENT.RPC_URL),
-    });
+    const publicClient = createResilientPublicClient();
+    const cacheKey = 'all_communities';
 
-    const communities = await publicClient.readContract({
-      address: CONTRACT_ADDRESSES.REGISTRY,
-      abi: REGISTRY_ABI,
-      functionName: 'getAllCommunities',
-    }) as Community[];
+    const communities = await cachedContractRead(
+      cacheKey,
+      () => publicClient.readContract({
+        address: CONTRACT_ADDRESSES.REGISTRY,
+        abi: REGISTRY_ABI,
+        functionName: 'getAllCommunities',
+      })
+    ) as Community[];
 
     return communities;
   } catch (error) {
@@ -93,17 +94,18 @@ export async function getAllCommunities(): Promise<Community[]> {
  */
 export async function getCommunity(communityId: bigint): Promise<Community | null> {
   try {
-    const publicClient = createPublicClient({
-      chain: ANVIL_CHAIN,
-      transport: http(ENVIRONMENT.RPC_URL),
-    });
+    const publicClient = createResilientPublicClient();
+    const cacheKey = `community_${communityId}`;
 
-    const community = await publicClient.readContract({
-      address: CONTRACT_ADDRESSES.REGISTRY,
-      abi: REGISTRY_ABI,
-      functionName: 'getCommunity',
-      args: [communityId],
-    }) as Community;
+    const community = await cachedContractRead(
+      cacheKey,
+      () => publicClient.readContract({
+        address: CONTRACT_ADDRESSES.REGISTRY,
+        abi: REGISTRY_ABI,
+        functionName: 'getCommunity',
+        args: [communityId],
+      })
+    ) as Community;
 
     return community;
   } catch (error) {

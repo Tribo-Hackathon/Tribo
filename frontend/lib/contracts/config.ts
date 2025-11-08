@@ -1,34 +1,48 @@
 // Contract addresses configuration
 export const CONTRACT_ADDRESSES = {
-  FACTORY: "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853" as const,
-  REGISTRY: "0x0433d874a28147DB0b330C000fcC50C0f0BaF425" as const,
-  NFT: "0xb14D33721D921fA72Eae56EfE9149caF7C7f2736" as const,
-  GOV: "0x67142Aa1328d0773E9e2C42588693a090Aed934C" as const,
+  FACTORY: "0x897FFD5c0E830dC6F5C29aD648e6Ae00e8d6e900" as const,
+  REGISTRY: "0x5c9ECC849e954aFDc7Ff2Ca22D09b9033060D9d9" as const,
 } as const;
 
-// Custom Anvil chain configuration
-export const ANVIL_CHAIN = {
-  id: 31337,
-  name: 'Anvil',
-  network: 'anvil',
+// Base mainnet chain configuration with multiple RPC endpoints for redundancy
+export const BASE_CHAIN = {
+  id: 8453,
+  name: 'Base',
+  network: 'base',
   nativeCurrency: {
     decimals: 18,
-    name: 'GO',
-    symbol: 'GO',
+    name: 'Ether',
+    symbol: 'ETH',
   },
   rpcUrls: {
-    default: { http: ['https://a949fa5aa577.ngrok-free.app'] },
-    public: { http: ['https://a949fa5aa577.ngrok-free.app'] },
+    default: {
+      http: [
+        'https://mainnet.base.org',
+        'https://base-mainnet.public.blastapi.io',
+        'https://base.gateway.tenderly.co'
+      ]
+    },
+    public: {
+      http: [
+        'https://mainnet.base.org',
+        'https://base-mainnet.public.blastapi.io',
+        'https://base.gateway.tenderly.co'
+      ]
+    },
   },
   blockExplorers: {
-    default: { name: 'Local', url: '#' }, // No block explorer for local chain
+    default: { name: 'BaseScan', url: 'https://basescan.org' },
   },
 } as const;
 
-// Environment configuration
+// Environment configuration with fallback RPC URLs
 export const ENVIRONMENT = {
-  RPC_URL: "https://a949fa5aa577.ngrok-free.app" as const,
-  CHAIN_ID: 31337 as const,
+  RPC_URLS: [
+    "https://mainnet.base.org",
+    "https://base-mainnet.public.blastapi.io",
+    "https://base.gateway.tenderly.co"
+  ] as const,
+  CHAIN_ID: 8453 as const,
   // Private key will be provided by MetaMask
   // Creator address will be provided by MetaMask
 } as const;

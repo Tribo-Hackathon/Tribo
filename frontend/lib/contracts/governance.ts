@@ -1,5 +1,6 @@
-import { createPublicClient, createWalletClient, custom, http, parseAbiItem } from 'viem';
-import { ANVIL_CHAIN, ENVIRONMENT } from './config';
+import { createWalletClient, custom, parseAbiItem } from 'viem';
+import { BASE_CHAIN } from './config';
+import { createResilientPublicClient, cachedContractRead } from './rpc-client';
 
 // Governor contract ABI - key functions for governance
 const GOVERNOR_ABI = [
@@ -218,7 +219,7 @@ export async function createProposal(
 
     // Create wallet client
     const walletClient = createWalletClient({
-      chain: ANVIL_CHAIN,
+      chain: BASE_CHAIN,
       transport: custom(window.ethereum),
     });
 
@@ -274,7 +275,7 @@ export async function castVote(
 
     // Create wallet client
     const walletClient = createWalletClient({
-      chain: ANVIL_CHAIN,
+      chain: BASE_CHAIN,
       transport: custom(window.ethereum),
     });
 
@@ -319,17 +320,18 @@ export async function getProposalState(
   proposalId: bigint
 ): Promise<ProposalState> {
   try {
-    const publicClient = createPublicClient({
-      chain: ANVIL_CHAIN,
-      transport: http(ENVIRONMENT.RPC_URL),
-    });
+    const publicClient = createResilientPublicClient();
+    const cacheKey = `state_${governorAddress}_${proposalId}`;
 
-    const state = await publicClient.readContract({
-      address: governorAddress as `0x${string}`,
-      abi: GOVERNOR_ABI,
-      functionName: 'state',
-      args: [proposalId],
-    });
+    const state = await cachedContractRead(
+      cacheKey,
+      () => publicClient.readContract({
+        address: governorAddress as `0x${string}`,
+        abi: GOVERNOR_ABI,
+        functionName: 'state',
+        args: [proposalId],
+      })
+    );
 
     return state as ProposalState;
   } catch (error) {
@@ -349,17 +351,18 @@ export async function getProposalVotes(
   proposalId: bigint
 ): Promise<ProposalVotes> {
   try {
-    const publicClient = createPublicClient({
-      chain: ANVIL_CHAIN,
-      transport: http(ENVIRONMENT.RPC_URL),
-    });
+    const publicClient = createResilientPublicClient();
+    const cacheKey = `votes_${governorAddress}_${proposalId}`;
 
-    const votes = await publicClient.readContract({
-      address: governorAddress as `0x${string}`,
-      abi: GOVERNOR_ABI,
-      functionName: 'proposalVotes',
-      args: [proposalId],
-    });
+    const votes = await cachedContractRead(
+      cacheKey,
+      () => publicClient.readContract({
+        address: governorAddress as `0x${string}`,
+        abi: GOVERNOR_ABI,
+        functionName: 'proposalVotes',
+        args: [proposalId],
+      })
+    );
 
     return {
       againstVotes: votes[0] as bigint,
@@ -383,10 +386,7 @@ export async function getUserVotingPower(
   userAddress: string
 ): Promise<bigint> {
   try {
-    const publicClient = createPublicClient({
-      chain: ANVIL_CHAIN,
-      transport: http(ENVIRONMENT.RPC_URL),
-    });
+    const publicClient = createResilientPublicClient();
 
     // Get the current block number
     const currentBlock = await publicClient.getBlockNumber();
@@ -419,10 +419,7 @@ export async function getDelegatedTo(
   userAddress: string
 ): Promise<string> {
   try {
-    const publicClient = createPublicClient({
-      chain: ANVIL_CHAIN,
-      transport: http(ENVIRONMENT.RPC_URL),
-    });
+    const publicClient = createResilientPublicClient();
 
     const delegatedTo = await publicClient.readContract({
       address: nftAddress as `0x${string}`,
@@ -461,7 +458,7 @@ export async function delegateVotes(
   }
 
   const walletClient = createWalletClient({
-    chain: ANVIL_CHAIN,
+    chain: BASE_CHAIN,
     transport: custom(window.ethereum),
   });
 
@@ -499,10 +496,7 @@ export async function getUserVotingPowerAtBlock(
   blockNumber: bigint
 ): Promise<bigint> {
   try {
-    const publicClient = createPublicClient({
-      chain: ANVIL_CHAIN,
-      transport: http(ENVIRONMENT.RPC_URL),
-    });
+    const publicClient = createResilientPublicClient();
 
     const votingPower = await publicClient.readContract({
       address: governorAddress as `0x${string}`,
@@ -531,10 +525,7 @@ export async function hasUserVoted(
   userAddress: string
 ): Promise<boolean> {
   try {
-    const publicClient = createPublicClient({
-      chain: ANVIL_CHAIN,
-      transport: http(ENVIRONMENT.RPC_URL),
-    });
+    const publicClient = createResilientPublicClient();
 
     const hasVoted = await publicClient.readContract({
       address: governorAddress as `0x${string}`,
@@ -557,10 +548,7 @@ export async function hasUserVoted(
  */
 export async function getProposalThreshold(governorAddress: string): Promise<bigint> {
   try {
-    const publicClient = createPublicClient({
-      chain: ANVIL_CHAIN,
-      transport: http(ENVIRONMENT.RPC_URL),
-    });
+    const publicClient = createResilientPublicClient();
 
     const threshold = await publicClient.readContract({
       address: governorAddress as `0x${string}`,
@@ -586,17 +574,18 @@ export async function getAllProposals(
   fromBlock?: bigint
 ): Promise<Proposal[]> {
   try {
-    const publicClient = createPublicClient({
-      chain: ANVIL_CHAIN,
-      transport: http(ENVIRONMENT.RPC_URL),
-    });
+    const publicClient = createResilientPublicClient();
+    const cacheKey = `proposals_${governorAddress}_${fromBlock || 0}`;
 
-    // Get ProposalCreated events
-    const logs = await publicClient.getLogs({
-      address: governorAddress as `0x${string}`,
-      event: parseAbiItem('event ProposalCreated(uint256 proposalId, address proposer, address[] targets, uint256[] values, string[] signatures, bytes[] calldatas, uint256 voteStart, uint256 voteEnd, string description)'),
-      fromBlock: fromBlock || BigInt(0),
-    });
+    // Get ProposalCreated events with caching and retry logic
+    const logs = await cachedContractRead(
+      cacheKey,
+      () => publicClient.getLogs({
+        address: governorAddress as `0x${string}`,
+        event: parseAbiItem('event ProposalCreated(uint256 proposalId, address proposer, address[] targets, uint256[] values, string[] signatures, bytes[] calldatas, uint256 voteStart, uint256 voteEnd, string description)'),
+        fromBlock: fromBlock || BigInt(0),
+      })
+    );
 
     // Process each proposal
     const proposals: Proposal[] = [];
@@ -623,22 +612,34 @@ export async function getAllProposals(
           title = description || title;
         }
 
-        // Get current state and votes
-        const [state, votes, snapshot, deadline] = await Promise.all([
+        // Get current state and votes with caching and delays
+        const [state, votes] = await Promise.all([
           getProposalState(governorAddress, proposalId),
           getProposalVotes(governorAddress, proposalId),
-          publicClient.readContract({
-            address: governorAddress as `0x${string}`,
-            abi: GOVERNOR_ABI,
-            functionName: 'proposalSnapshot',
-            args: [proposalId],
-          }),
-          publicClient.readContract({
-            address: governorAddress as `0x${string}`,
-            abi: GOVERNOR_ABI,
-            functionName: 'proposalDeadline',
-            args: [proposalId],
-          }),
+        ]);
+
+        // Add delay before additional calls to avoid rate limits
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        const [snapshot, deadline] = await Promise.all([
+          cachedContractRead(
+            `snapshot_${governorAddress}_${proposalId}`,
+            () => publicClient.readContract({
+              address: governorAddress as `0x${string}`,
+              abi: GOVERNOR_ABI,
+              functionName: 'proposalSnapshot',
+              args: [proposalId],
+            })
+          ),
+          cachedContractRead(
+            `deadline_${governorAddress}_${proposalId}`,
+            () => publicClient.readContract({
+              address: governorAddress as `0x${string}`,
+              abi: GOVERNOR_ABI,
+              functionName: 'proposalDeadline',
+              args: [proposalId],
+            })
+          ),
         ]);
 
         proposals.push({

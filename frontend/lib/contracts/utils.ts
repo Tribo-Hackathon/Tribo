@@ -16,16 +16,25 @@ export function formatTransactionHash(hash: string): string {
  * @param chainId - The chain ID (optional, defaults to mainnet)
  * @returns Block explorer URL
  */
-export function getTransactionUrl(hash: string, chainId: number = 1): string {
-  // For local development, we might not have a block explorer
-  // This is a placeholder that could be configured per environment
-  if (chainId === 31337) {
-    // Local hardhat/anvil chain
-    return `#${hash}`;
+export function getTransactionUrl(hash: string, chainId: number = 8453): string {
+  // Base mainnet
+  if (chainId === 8453) {
+    return `https://basescan.org/tx/${hash}`;
   }
 
   // Ethereum mainnet
-  return `https://etherscan.io/tx/${hash}`;
+  if (chainId === 1) {
+    return `https://etherscan.io/tx/${hash}`;
+  }
+
+  // For local development, we might not have a block explorer
+  if (chainId === 31337) {
+    // Local development chain
+    return `#${hash}`;
+  }
+
+  // Default to Base for unknown chains
+  return `https://basescan.org/tx/${hash}`;
 }
 
 /**

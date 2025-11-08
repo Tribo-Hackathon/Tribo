@@ -33,6 +33,10 @@ export default function CommunityPage({ params }: CommunityPageProps) {
       setError(null);
 
       const communityId = BigInt(resolvedParams.communityId);
+
+      // Add a small delay to debounce rapid calls
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
       const communityData = await getCommunityData(communityId);
 
       if (!communityData) {
@@ -51,7 +55,13 @@ export default function CommunityPage({ params }: CommunityPageProps) {
       }
     } catch (err) {
       console.error("Failed to load community:", err);
-      setError("Failed to load community data");
+
+      // Check if it's a rate limit error and show appropriate message
+      if (err instanceof Error && err.message.includes("rate limit")) {
+        setError("Too many requests. Please wait a moment and try again.");
+      } else {
+        setError("Failed to load community data");
+      }
     } finally {
       setLoading(false);
     }
@@ -62,11 +72,11 @@ export default function CommunityPage({ params }: CommunityPageProps) {
   }, [loadCommunityData]);
 
   // Reload data when user mints successfully
-  const handleMintSuccess = () => {
+  const handleMintSuccess = useCallback(() => {
     setTimeout(() => {
       loadCommunityData();
     }, 3000); // Wait a bit for blockchain confirmation
-  };
+  }, [loadCommunityData]);
 
   if (loading) {
     return (

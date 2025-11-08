@@ -1,6 +1,7 @@
-import { createPublicClient, createWalletClient, custom, http } from 'viem';
-import { ANVIL_CHAIN, CONTRACT_ADDRESSES, ENVIRONMENT } from './config';
+import { createWalletClient, custom } from 'viem';
+import { BASE_CHAIN } from './config';
 import { getCommunity, Community } from './registry';
+import { createResilientPublicClient, cachedContractRead, batchContractReads } from './rpc-client';
 
 // AccessNFT ABI - key functions for checking balance and minting
 const ACCESS_NFT_ABI = [
@@ -20,7 +21,7 @@ const ACCESS_NFT_ABI = [
   },
   {
     inputs: [],
-    name: "MINT_PRICE",
+    name: "getMintPrice",
     outputs: [{ name: "", type: "uint256", internalType: "uint256" }],
     stateMutability: "view",
     type: "function",
@@ -67,29 +68,39 @@ export async function getCommunityData(communityId: bigint): Promise<CommunityDa
     const community = await getCommunity(communityId);
     if (!community) return null;
 
-    const publicClient = createPublicClient({
-      chain: ANVIL_CHAIN,
-      transport: http(ENVIRONMENT.RPC_URL),
-    });
+    const publicClient = createResilientPublicClient();
+    const nftAddress = community.nft as `0x${string}`;
 
-    // Fetch additional NFT details
-    const [nftName, nftSymbol, mintPrice] = await Promise.all([
-      publicClient.readContract({
-        address: community.nft as `0x${string}`,
-        abi: ACCESS_NFT_ABI,
-        functionName: 'name',
-      }),
-      publicClient.readContract({
-        address: community.nft as `0x${string}`,
-        abi: ACCESS_NFT_ABI,
-        functionName: 'symbol',
-      }),
-      publicClient.readContract({
-        address: community.nft as `0x${string}`,
-        abi: ACCESS_NFT_ABI,
-        functionName: 'MINT_PRICE',
-      }),
-    ]);
+    // Create cache keys for each contract call
+    const cacheKeyBase = `nft_${nftAddress}`;
+
+    // Batch contract reads with caching and retry logic
+    const [nftName, nftSymbol, mintPrice] = await batchContractReads([
+      {
+        key: `${cacheKeyBase}_name`,
+        call: () => publicClient.readContract({
+          address: nftAddress,
+          abi: ACCESS_NFT_ABI,
+          functionName: 'name',
+        })
+      },
+      {
+        key: `${cacheKeyBase}_symbol`,
+        call: () => publicClient.readContract({
+          address: nftAddress,
+          abi: ACCESS_NFT_ABI,
+          functionName: 'symbol',
+        })
+      },
+      {
+        key: `${cacheKeyBase}_mintPrice`,
+        call: () => publicClient.readContract({
+          address: nftAddress,
+          abi: ACCESS_NFT_ABI,
+          functionName: 'getMintPrice',
+        })
+      }
+    ], 200); // 200ms delay between calls
 
     return {
       ...community,
@@ -111,22 +122,23 @@ export async function getCommunityData(communityId: bigint): Promise<CommunityDa
  */
 export async function checkNFTBalance(userAddress: string, nftAddress: string): Promise<bigint> {
   try {
-    const publicClient = createPublicClient({
-      chain: ANVIL_CHAIN,
-      transport: http(ENVIRONMENT.RPC_URL),
-    });
+    const publicClient = createResilientPublicClient();
+    const cacheKey = `balance_${nftAddress}_${userAddress}`;
 
-    const balance = await publicClient.readContract({
-      address: nftAddress as `0x${string}`,
-      abi: ACCESS_NFT_ABI,
-      functionName: 'balanceOf',
-      args: [userAddress as `0x${string}`],
-    });
+    const balance = await cachedContractRead(
+      cacheKey,
+      () => publicClient.readContract({
+        address: nftAddress as `0x${string}`,
+        abi: ACCESS_NFT_ABI,
+        functionName: 'balanceOf',
+        args: [userAddress as `0x${string}`],
+      })
+    );
 
     return balance as bigint;
   } catch (error) {
     console.error('Failed to check NFT balance:', error);
-    return 0n;
+    return BigInt(0);
   }
 }
 
@@ -156,7 +168,7 @@ export async function getUserCommunityStatus(
       Promise.resolve(isCreator(userAddress, community.creator))
     ]);
 
-    const hasNFT = nftBalance > 0n;
+    const hasNFT = nftBalance > BigInt(0);
 
     let role: UserRole;
     if (userIsCreator) {
@@ -175,7 +187,7 @@ export async function getUserCommunityStatus(
     console.error('Failed to get user community status:', error);
     return {
       role: 'visitor',
-      nftBalance: 0n,
+      nftBalance: BigInt(0),
       isCreator: false,
       canVote: false,
     };
@@ -197,7 +209,7 @@ export async function mintNFT(nftAddress: string, mintPrice: bigint): Promise<st
 
     // Create wallet client with MetaMask
     const walletClient = createWalletClient({
-      chain: ANVIL_CHAIN,
+      chain: BASE_CHAIN,
       transport: custom(window.ethereum),
     });
 
@@ -230,20 +242,21 @@ export async function mintNFT(nftAddress: string, mintPrice: bigint): Promise<st
  */
 export async function getMintPrice(nftAddress: string): Promise<bigint> {
   try {
-    const publicClient = createPublicClient({
-      chain: ANVIL_CHAIN,
-      transport: http(ENVIRONMENT.RPC_URL),
-    });
+    const publicClient = createResilientPublicClient();
+    const cacheKey = `mintPrice_${nftAddress}`;
 
-    const price = await publicClient.readContract({
-      address: nftAddress as `0x${string}`,
-      abi: ACCESS_NFT_ABI,
-      functionName: 'MINT_PRICE',
-    });
+    const price = await cachedContractRead(
+      cacheKey,
+      () => publicClient.readContract({
+        address: nftAddress as `0x${string}`,
+        abi: ACCESS_NFT_ABI,
+        functionName: 'getMintPrice',
+      })
+    );
 
     return price as bigint;
   } catch (error) {
     console.error('Failed to get mint price:', error);
-    return 0n;
+    return BigInt(0);
   }
 }

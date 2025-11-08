@@ -1,6 +1,6 @@
 // Note: We're using direct viem clients instead of wagmi for custom RPC support
 import { createWalletClient, createPublicClient, custom, http, decodeEventLog } from 'viem';
-import { CONTRACT_ADDRESSES, ENVIRONMENT, ANVIL_CHAIN } from './config';
+import { CONTRACT_ADDRESSES, ENVIRONMENT, BASE_CHAIN } from './config';
 import { COMMUNITY_DEFAULTS, CommunityParams } from './constants';
 import { FACTORY_ABI, DeploymentResult } from './types';
 
@@ -18,16 +18,16 @@ export async function createCommunity(
       throw new Error('MetaMask not found. Please install MetaMask.');
     }
 
-    // Create wallet client with MetaMask and custom Anvil chain
+    // Create wallet client with MetaMask and Base chain
     const walletClient = createWalletClient({
-      chain: ANVIL_CHAIN,
+      chain: BASE_CHAIN,
       transport: custom(window.ethereum),
     });
 
-    // Create public client for transaction receipt with custom Anvil chain
+    // Create public client for transaction receipt with Base chain
     const publicClient = createPublicClient({
-      chain: ANVIL_CHAIN,
-      transport: http(ENVIRONMENT.RPC_URL),
+      chain: BASE_CHAIN,
+      transport: http(ENVIRONMENT.RPC_URLS[0]),
     });
 
     // Prepare community parameters using constants and creator address
