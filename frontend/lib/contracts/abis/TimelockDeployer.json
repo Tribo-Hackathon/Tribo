@@ -1,0 +1,31 @@
+[
+  {
+    "type": "function",
+    "name": "deploy",
+    "inputs": [
+      {
+        "name": "minDelay",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "proposer",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "admin",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "tl",
+        "type": "address",
+        "internalType": "contract TimelockController"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  }
+]
