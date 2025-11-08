@@ -1,0 +1,35 @@
+{
+  "accountAssociation": {
+    "header": "",
+    "payload": "",
+    "signature": ""
+  },
+  "baseBuilder": {
+    "ownerAddress": "0x"
+  },
+  "miniapp": {
+    "version": "1",
+    "name": "Creator DAO Platform",
+    "homeUrl": "https://your-app.com",
+    "iconUrl": "https://your-app.com/favicon.ico",
+    "splashImageUrl": "https://your-app.com/splash.png",
+    "splashBackgroundColor": "#7C3AED",
+    "webhookUrl": "https://your-app.com/api/webhook",
+    "subtitle": "Create, scale and engage creator communities",
+    "description": "The new way to create, scale and engage creator communities with NFTs, DAOs and automated Discord. Transform passive members into active co-pilots of your project.",
+    "screenshotUrls": [
+      "https://your-app.com/screenshot1.png",
+      "https://your-app.com/screenshot2.png",
+      "https://your-app.com/screenshot3.png"
+    ],
+    "primaryCategory": "social",
+    "tags": ["dao", "governance", "nft", "discord", "community", "creator", "baseapp"],
+    "heroImageUrl": "https://your-app.com/hero.png",
+    "tagline": "Transform members into co-pilots",
+    "ogTitle": "Creator DAO Platform",
+    "ogDescription": "The new way to create, scale and engage creator communities with NFTs, DAOs and automated Discord",
+    "ogImageUrl": "https://your-app.com/og.png",
+    "noindex": true
+  }
+}
+
